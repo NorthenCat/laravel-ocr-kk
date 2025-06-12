@@ -12,7 +12,7 @@ return new class extends Migration {
     {
         Schema::create('kk_members', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('kk_id')->constrained('kk')->onDelete('cascade');
+            $table->foreignId('kk_id')->nullable()->constrained('kk')->onDelete('cascade');
             $table->string('img_name')->nullable();
             $table->string('nama_kepala_keluarga')->nullable();
             $table->text('alamat')->nullable();

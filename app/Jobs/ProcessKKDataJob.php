@@ -7,6 +7,7 @@ use App\Models\KK;
 use App\Models\RW;
 use App\Models\Anggota;
 use App\Models\RwJobStatus;
+use App\Models\FailedKkFile;
 use Illuminate\Bus\Batchable;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -27,11 +28,17 @@ class ProcessKKDataJob implements ShouldQueue
     protected $rwId;
     protected $desaId;
 
+    // Remove queue-specific properties for now
+    // public $queue = 'kk_processing';
+
     public function __construct($kkData, $desaId, $rwId)
     {
         $this->kkData = $kkData;
         $this->rwId = $rwId;
         $this->desaId = $desaId;
+
+        // Remove queue-specific setup for now
+        // $this->onQueue('kk_processing');
     }
 
     public function handle()
@@ -158,7 +165,18 @@ class ProcessKKDataJob implements ShouldQueue
 
         // Validate response structure
         if (!isset($data['isKK']) || $data['isKK'] !== true) {
-            Log::info('N8N response indicates not KK data, skipping', [
+            // Save as failed file for manual processing
+            FailedKkFile::create([
+                'rw_id' => $this->rwId,
+                'batch_id' => $this->batch()->id,
+                'filename' => $this->kkData['filename'],
+                'raw_text' => $this->kkData['raw'],
+                'failure_reason' => 'not_kk',
+                'error_message' => 'N8N response indicates this is not KK data',
+                'n8n_response' => $data,
+            ]);
+
+            Log::info('N8N response indicates not KK data, saved for manual processing', [
                 'filename' => $this->kkData['filename'],
                 'isKK' => $data['isKK'] ?? null,
                 'batch_id' => $this->batch()->id
@@ -168,7 +186,18 @@ class ProcessKKDataJob implements ShouldQueue
 
         // Check for AnggotaKeluarga (capital A)
         if (!isset($data['AnggotaKeluarga']) || empty($data['AnggotaKeluarga'])) {
-            Log::warning('No AnggotaKeluarga data in N8N response', [
+            // Save as failed file for manual processing
+            FailedKkFile::create([
+                'rw_id' => $this->rwId,
+                'batch_id' => $this->batch()->id,
+                'filename' => $this->kkData['filename'],
+                'raw_text' => $this->kkData['raw'],
+                'failure_reason' => 'no_anggota_data',
+                'error_message' => 'No AnggotaKeluarga data found in N8N response',
+                'n8n_response' => $data,
+            ]);
+
+            Log::warning('No AnggotaKeluarga data in N8N response, saved for manual processing', [
                 'filename' => $this->kkData['filename'],
                 'batch_id' => $this->batch()->id,
                 'available_keys' => array_keys($data)
@@ -191,8 +220,72 @@ class ProcessKKDataJob implements ShouldQueue
             // Extract KK data from first anggota (head of family)
             $kkData = $data['AnggotaKeluarga'][0];
 
-            // Generate NoKK if null
-            $noKK = !empty($kkData['NoKK']) ? $kkData['NoKK'] : $this->generateKKNumber($rw);
+            // Check if NoKK exists - if null, create KK with 16 zeros
+            if (empty($kkData['NoKK'])) {
+                Log::info('NoKK is null/empty, creating KK with 16 zeros for standalone anggota', [
+                    'filename' => $this->kkData['filename'],
+                    'anggota_count' => count($data['AnggotaKeluarga']),
+                    'batch_id' => $this->batch()->id
+                ]);
+
+                $noKK = '0000000000000000'; // 16 zeros
+
+                // Check if KK with 16 zeros already exists in this RW
+                $existingKK = KK::where('rw_id', $rw->id)->where('no_kk', $noKK)->first();
+
+                if (!$existingKK) {
+                    // Create KK with 16 zeros
+                    $kk = KK::create([
+                        'uuid' => Str::uuid(),
+                        'no_kk' => $noKK,
+                        'nama_kepala_keluarga' => 'Anggota Tanpa KK',
+                        'rw_id' => $rw->id,
+                    ]);
+
+                    Log::info('KK with 16 zeros created', [
+                        'kk_id' => $kk->id,
+                        'no_kk' => $kk->no_kk,
+                        'batch_id' => $this->batch()->id
+                    ]);
+                } else {
+                    $kk = $existingKK;
+                    Log::info('Using existing KK with 16 zeros', [
+                        'kk_id' => $kk->id,
+                        'no_kk' => $kk->no_kk,
+                        'batch_id' => $this->batch()->id
+                    ]);
+                }
+
+                // Create all anggota and assign to the zero KK
+                $anggotaCount = 0;
+                foreach ($data['AnggotaKeluarga'] as $anggotaData) {
+                    $anggota = $this->createAnggota($kk, $anggotaData);
+                    $anggotaCount++;
+
+                    Log::info('Anggota created and assigned to zero KK', [
+                        'anggota_id' => $anggota->id,
+                        'nama_lengkap' => $anggota->nama_lengkap,
+                        'nik' => $anggota->nik,
+                        'kk_id' => $kk->id,
+                        'filename' => $this->kkData['filename'],
+                        'batch_id' => $this->batch()->id
+                    ]);
+                }
+
+                DB::commit();
+
+                Log::info('Anggota records created and assigned to zero KK', [
+                    'kk_id' => $kk->id,
+                    'no_kk' => $kk->no_kk,
+                    'anggota_count' => $anggotaCount,
+                    'filename' => $this->kkData['filename'],
+                    'batch_id' => $this->batch()->id
+                ]);
+
+                return;
+            }
+
+            $noKK = $kkData['NoKK'];
 
             // Check if KK already exists
             $existingKK = KK::where('rw_id', $rw->id)->where('no_kk', $noKK)->first();
@@ -310,6 +403,57 @@ class ProcessKKDataJob implements ShouldQueue
         return $anggota;
     }
 
+    private function createStandaloneAnggota(array $anggotaData)
+    {
+        // Parse tanggal lahir
+        $tanggalLahir = null;
+        if (!empty($anggotaData['TanggalLahir'])) {
+            try {
+                $tanggalLahir = Carbon::parse($anggotaData['TanggalLahir']);
+            } catch (\Exception $e) {
+                Log::warning('Failed to parse tanggal lahir for standalone anggota', [
+                    'tanggal_lahir' => $anggotaData['TanggalLahir'],
+                    'error' => $e->getMessage()
+                ]);
+            }
+        }
+
+        // Create anggota without KK association
+        $anggota = Anggota::create([
+            'kk_id' => null, // No KK association
+            'img_name' => $anggotaData['img_name'] ?? null,
+            'nama_kepala_keluarga' => $anggotaData['NamaKepalaKeluarga'] ?? null,
+            'alamat' => $anggotaData['Alamat'] ?? null,
+            'rt' => $anggotaData['RT'] ?? null,
+            'rw' => $anggotaData['RW'] ?? null,
+            'kode_pos' => $anggotaData['KodePos'] ?? null,
+            'desa_kelurahan' => $anggotaData['DesaKelurahan'] ?? null,
+            'kecamatan' => $anggotaData['Kecamatan'] ?? null,
+            'kabupaten_kota' => $anggotaData['KabupatenKota'] ?? null,
+            'provinsi' => $anggotaData['Provinsi'] ?? null,
+            'no_kk' => null, // No KK number
+            'kk_disahkan_tanggal' => $this->parseDate($anggotaData['KKDisahkanTanggal'] ?? null),
+            'nama_lengkap' => $anggotaData['NamaLengkap'] ?? null,
+            'nik' => $anggotaData['NIK'] ?? null,
+            'jenis_kelamin' => $anggotaData['JenisKelamin'] ?? null,
+            'tempat_lahir' => $anggotaData['TempatLahir'] ?? null,
+            'tanggal_lahir' => $tanggalLahir,
+            'agama' => $anggotaData['Agama'] ?? null,
+            'pendidikan' => $anggotaData['Pendidikan'] ?? null,
+            'jenis_pekerjaan' => $anggotaData['JenisPekerjaan'] ?? null,
+            'golongan_darah' => $anggotaData['GolonganDarah'] ?? null,
+            'status_perkawinan' => $anggotaData['StatusPerkawinan'] ?? null,
+            'status_hubungan_dalam_keluarga' => $anggotaData['StatusHubunganDalamKeluarga'] ?? null,
+            'kewarganegaraan' => $anggotaData['Kewarganegaraan'] ?? null,
+            'no_paspor' => $anggotaData['NoPaspor'] ?? null,
+            'no_kitap' => $anggotaData['NoKITAP'] ?? null,
+            'ayah' => $anggotaData['Ayah'] ?? null,
+            'ibu' => $anggotaData['Ibu'] ?? null,
+        ]);
+
+        return $anggota;
+    }
+
     private function parseDate($dateString)
     {
         if (empty($dateString)) {
@@ -340,7 +484,17 @@ class ProcessKKDataJob implements ShouldQueue
         // Update job status when job fails permanently
         $this->updateJobProgress(true);
 
-        Log::error('ProcessKKDataJob failed permanently', [
+        // Save as failed file for manual processing
+        FailedKkFile::create([
+            'rw_id' => $this->rwId,
+            'batch_id' => $this->batch()->id ?? 'unknown',
+            'filename' => $this->kkData['filename'] ?? 'unknown',
+            'raw_text' => $this->kkData['raw'] ?? null,
+            'failure_reason' => 'processing_error',
+            'error_message' => $exception->getMessage(),
+        ]);
+
+        Log::error('ProcessKKDataJob failed permanently, saved for manual processing', [
             'filename' => $this->kkData['filename'] ?? 'unknown',
             'error' => $exception->getMessage(),
             'rw_id' => $this->rwId,

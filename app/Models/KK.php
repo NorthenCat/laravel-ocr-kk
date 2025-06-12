@@ -26,7 +26,7 @@ class KK extends Model
         return $this->belongsTo(RW::class, 'rw_id', 'id');
     }
 
-    public function getAnggota()
+    public function getWarga()
     {
         return $this->hasMany(Anggota::class, 'kk_id', 'id');
     }

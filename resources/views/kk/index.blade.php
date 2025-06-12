@@ -3,7 +3,7 @@
 @section('title', 'KK ' . $kk->no_kk)
 
 @section('content')
-<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
     <!-- Breadcrumb -->
     <x-breadcrumb>
         <li class="inline-flex items-center">
@@ -125,7 +125,7 @@
                         <div class="ml-5 w-0 flex-1">
                             <dl>
                                 <dt class="text-sm font-medium text-gray-500 truncate">Total Anggota</dt>
-                                <dd class="text-lg font-medium text-gray-900">{{ $kk->get_anggota_count }}</dd>
+                                <dd class="text-lg font-medium text-gray-900">{{ $kk->getWarga->count() }}</dd>
                             </dl>
                         </div>
                     </div>
@@ -142,7 +142,7 @@
         </div>
 
         <div class="p-6">
-            @if($kk->getAnggota->count() > 0)
+            @if($kk->getWarga->count() > 0)
             <div class="overflow-x-auto">
                 <table class="min-w-full divide-y divide-gray-200">
                     <thead class="bg-gray-50">
@@ -160,7 +160,7 @@
                         </tr>
                     </thead>
                     <tbody class="bg-white divide-y divide-gray-200">
-                        @foreach($kk->getAnggota as $anggota)
+                        @foreach($kk->getWarga as $anggota)
                         <tr class="hover:bg-gray-50">
                             <td class="px-6 py-4 whitespace-nowrap">
                                 <div class="text-sm font-medium text-gray-900">{{ $anggota->nama_lengkap }}</div>

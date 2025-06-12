@@ -63,6 +63,6 @@ class Desa extends Model
 
     public function getWarga()
     {
-        return $this->getKK()->with('getAnggota');
+        return $this->getKK()->with('getWarga');
     }
 }

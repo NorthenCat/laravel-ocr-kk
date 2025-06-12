@@ -14,12 +14,12 @@ class KKController extends Controller
     {
         $kk = KK::with([
             'getRw.getDesa',
-            'getAnggota' => function ($query) {
+            'getWarga' => function ($query) {
                 $query->orderBy('nama_lengkap', 'asc');
             }
         ])->where('rw_id', $rw_id)->findOrFail($kk_id);
 
-        $kk->loadCount('getAnggota');
+        $kk->loadCount('getWarga');
 
         return view('kk.index', compact('kk'));
     }
@@ -150,7 +150,7 @@ class KKController extends Controller
                 return back()->withErrors(['json_file' => 'No valid KK data found in the JSON file.']);
             }
 
-            // Dispatch jobs in batches of 5
+            // Dispatch jobs in batches
             $batch = \Illuminate\Support\Facades\Bus::batch($jobs)
                 ->then(function (\Illuminate\Bus\Batch $batch) use ($desa_id, $rw_id) {
                     // Update job status to completed
@@ -193,7 +193,6 @@ class KKController extends Controller
                 })
                 ->allowFailures()
                 ->onConnection('database')
-                ->onQueue('default')
                 ->dispatch();
 
             // Create job status record

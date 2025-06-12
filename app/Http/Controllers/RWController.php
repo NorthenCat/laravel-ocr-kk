@@ -2,10 +2,13 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Anggota;
 use App\Models\RW;
 use App\Models\Desa;
+use App\Exports\AnggotaExport;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
+use Maatwebsite\Excel\Facades\Excel;
 
 class RWController extends Controller
 {
@@ -17,7 +20,7 @@ class RWController extends Controller
 
         $rw = RW::with([
             'getDesa',
-            'getKK.getAnggota',
+            'getKK.getWarga',
             'getKK' => function ($query) {
                 $query->orderBy('no_kk', 'asc');
             },
@@ -29,7 +32,48 @@ class RWController extends Controller
 
         $rw->loadCount(['getKK', 'getWarga']);
 
-        return view('rw.index', compact('rw'));
+        // Get standalone anggota (those with zero KK only)
+        $standaloneAnggota = Anggota::with('getKk')
+            ->whereHas('getKk', function ($query) use ($rw_id) {
+                $query->where('rw_id', $rw_id)
+                    ->where('no_kk', '0000000000000000');
+            })
+            ->orderBy('nama_lengkap', 'asc')
+            ->get();
+
+        // Get anggota without NIK
+        $anggotaTanpaNik = Anggota::with('getKk')
+            ->whereHas('getKk', function ($query) use ($rw_id) {
+                $query->where('rw_id', $rw_id);
+            })
+            ->where(function ($query) {
+                $query->whereNull('nik')
+                    ->orWhere('nik', '')
+                    ->orWhere('nik', '-');
+            })
+            ->orderBy('nama_lengkap', 'asc')
+            ->get();
+
+        // Get failed KK files for manual processing
+        $failedFiles = \App\Models\FailedKkFile::where('rw_id', $rw_id)
+            ->where('manually_processed', false)
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        $totalRT = Anggota::whereHas('getKk', function ($query) use ($rw_id) {
+            $query->where('rw_id', $rw_id);
+        })
+            ->pluck('RT')
+            ->map(function ($rt) {
+                return (int) $rt;
+            })
+            ->unique()
+            ->count();
+
+
+
+
+        return view('rw.index', compact('rw', 'standaloneAnggota', 'anggotaTanpaNik', 'failedFiles', 'totalRT'));
     }
 
     /**
@@ -100,5 +144,17 @@ class RWController extends Controller
         $rw->delete();
 
         return redirect()->route('desa.show', $desa_id)->with('success', 'RW deleted successfully.');
+    }
+
+    /**
+     * Export to Excel.
+     */
+    public function exportExcel($desa_id, $rw_id)
+    {
+        $rw = RW::with('getDesa')->where('desa_id', $desa_id)->findOrFail($rw_id);
+
+        $fileName = 'KK-OCR_' . $rw->getDesa->nama_desa . '_' . $rw->nama_rw . '_' . now()->format('Y-m-d_H-i-s') . '.xlsx';
+
+        return Excel::download(new AnggotaExport($rw_id), $fileName);
     }
 }

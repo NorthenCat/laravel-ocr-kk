@@ -50,6 +50,21 @@ class Anggota extends Model
         return $this->belongsTo(KK::class, 'kk_id', 'id');
     }
 
+    public function hasKk()
+    {
+        return !is_null($this->kk_id);
+    }
+
+    public function isStandalone()
+    {
+        return $this->getKk && $this->getKk->no_kk === '0000000000000000';
+    }
+
+    public function hasValidKk()
+    {
+        return $this->hasKk() && $this->getKk && $this->getKk->no_kk !== '0000000000000000';
+    }
+
     public function getDesa()
     {
         return $this->hasOneThrough(
