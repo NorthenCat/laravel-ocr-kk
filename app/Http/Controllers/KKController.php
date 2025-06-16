@@ -7,6 +7,7 @@ use App\Models\RW;
 use App\Models\Desa;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Storage;
 
 class KKController extends Controller
 {
@@ -105,49 +106,76 @@ class KKController extends Controller
     public function processUpload(Request $request, $desa_id, $rw_id)
     {
         $request->validate([
-            'json_file' => 'required|file|mimes:json|max:10240', // 10MB max
+            'kk_images' => 'required|array|min:1',
+            'kk_images.*' => 'required|file|image|mimes:jpeg,jpg,png|max:10240', // 10MB max per image
         ]);
 
         $rw = RW::where('desa_id', $desa_id)->findOrFail($rw_id);
 
         try {
-            $jsonContent = file_get_contents($request->file('json_file')->getRealPath());
-            $data = json_decode($jsonContent, true);
-
-            if (json_last_error() !== JSON_ERROR_NONE) {
-                return back()->withErrors(['json_file' => 'Invalid JSON file format.']);
-            }
-
-            // Validate JSON structure
-            if (!isset($data['pending']) || !is_array($data['pending'])) {
-                return back()->withErrors(['json_file' => 'Invalid JSON structure. Missing "pending" array.']);
-            }
-
             // Check if webhook is configured
             $setting = \App\Models\Setting::first();
             if (!$setting || !$setting->webhook_n8n) {
-                return back()->withErrors(['json_file' => 'N8N webhook URL is not configured. Please contact administrator.']);
+                return back()->withErrors(['kk_images' => 'N8N webhook URL is not configured. Please contact administrator.']);
             }
 
-            $pendingItems = $data['pending'];
+            $uploadedFiles = $request->file('kk_images');
 
-            if (empty($pendingItems)) {
-                return redirect()->route('rw.index', [$desa_id, $rw_id])->with('success', 'No pending items found in the JSON file.');
+            if (empty($uploadedFiles)) {
+                return redirect()->route('rw.index', [$desa_id, $rw_id])->with('success', 'No files were uploaded.');
             }
 
-            // Create jobs for processing
+            // Create temp directory if it doesn't exist
+            if (!Storage::disk('local')->exists('temp_kk_uploads')) {
+                Storage::disk('local')->makeDirectory('temp_kk_uploads');
+            }
+
+            // Process and store each image
             $jobs = [];
-            foreach ($pendingItems as $item) {
-                // Validate required fields
-                if (!isset($item['filename']) || !isset($item['raw'])) {
-                    continue; // Skip invalid items
+            $savedFiles = [];
+
+            foreach ($uploadedFiles as $file) {
+                $originalFilename = $file->getClientOriginalName();
+
+                // Use original filename directly
+                $filename = $originalFilename;
+
+                // Check if file with same name already exists, add timestamp if needed
+                $counter = 1;
+                $baseName = pathinfo($originalFilename, PATHINFO_FILENAME);
+                $extension = pathinfo($originalFilename, PATHINFO_EXTENSION);
+
+                while (Storage::disk('local')->exists('temp_kk_uploads/' . $filename)) {
+                    $filename = $baseName . '_' . $counter . '.' . $extension;
+                    $counter++;
                 }
 
-                $jobs[] = new \App\Jobs\ProcessKKDataJob($item, $desa_id, $rw_id);
+                // Store file in temp directory with original name (or modified if duplicate)
+                $filePath = $file->storeAs('temp_kk_uploads', $filename, 'local');
+
+                $savedFiles[] = [
+                    'path' => $filePath,
+                    'filename' => $filename,
+                    'original_filename' => $originalFilename
+                ];
+
+                // Create job data
+                $jobData = [
+                    'filename' => $filename,
+                    'original_filename' => $originalFilename,
+                    'file_path' => $filePath,
+                    'raw' => null // Will be populated after OCR
+                ];
+
+                $jobs[] = new \App\Jobs\ProcessKKDataJob($jobData, $desa_id, $rw_id);
             }
 
             if (empty($jobs)) {
-                return back()->withErrors(['json_file' => 'No valid KK data found in the JSON file.']);
+                // Clean up uploaded files
+                foreach ($savedFiles as $savedFile) {
+                    Storage::disk('local')->delete($savedFile['path']);
+                }
+                return back()->withErrors(['kk_images' => 'No valid image files found.']);
             }
 
             // Dispatch jobs in batches
@@ -161,7 +189,7 @@ class KKController extends Controller
                         'completed_at' => now()
                     ]);
 
-                    \Illuminate\Support\Facades\Log::info('All KK data processing jobs completed', [
+                    \Illuminate\Support\Facades\Log::info('All KK image processing jobs completed', [
                         'batch_id' => $batch->id,
                         'rw_id' => $rw_id,
                         'total_jobs' => $batch->totalJobs
@@ -177,14 +205,14 @@ class KKController extends Controller
                         'completed_at' => now()
                     ]);
 
-                    \Illuminate\Support\Facades\Log::error('KK data processing batch failed', [
+                    \Illuminate\Support\Facades\Log::error('KK image processing batch failed', [
                         'batch_id' => $batch->id,
                         'rw_id' => $rw_id,
                         'error' => $e->getMessage()
                     ]);
                 })
                 ->finally(function (\Illuminate\Bus\Batch $batch) use ($desa_id, $rw_id) {
-                    \Illuminate\Support\Facades\Log::info('KK data processing batch finished', [
+                    \Illuminate\Support\Facades\Log::info('KK image processing batch finished', [
                         'batch_id' => $batch->id,
                         'rw_id' => $rw_id,
                         'processed_jobs' => $batch->processedJobs(),
@@ -205,15 +233,22 @@ class KKController extends Controller
             ]);
 
             return redirect()->route('rw.index', [$desa_id, $rw_id])
-                ->with('success', 'JSON file uploaded successfully. Processing ' . count($jobs) . ' items in background. Batch ID: ' . $batch->id);
+                ->with('success', 'Images uploaded successfully. Processing ' . count($jobs) . ' files in background. Batch ID: ' . $batch->id);
 
         } catch (\Exception $e) {
-            \Illuminate\Support\Facades\Log::error('JSON upload processing failed', [
+            // Clean up any uploaded files on error
+            if (isset($savedFiles)) {
+                foreach ($savedFiles as $savedFile) {
+                    Storage::disk('local')->delete($savedFile['path']);
+                }
+            }
+
+            \Illuminate\Support\Facades\Log::error('Image upload processing failed', [
                 'error' => $e->getMessage(),
                 'rw_id' => $rw_id
             ]);
 
-            return back()->withErrors(['json_file' => 'Error processing file: ' . $e->getMessage()]);
+            return back()->withErrors(['kk_images' => 'Error processing files: ' . $e->getMessage()]);
         }
     }
 }

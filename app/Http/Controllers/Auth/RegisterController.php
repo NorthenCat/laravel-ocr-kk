@@ -43,6 +43,8 @@ class RegisterController extends Controller
             'password' => Hash::make($request->password),
         ]);
 
+        $user->assignRole('admin'); // Assign default role, e.g., 'admin'
+
         Auth::login($user);
 
         return redirect('/dashboard')->with('success', 'Registration successful! Welcome to the dashboard.');

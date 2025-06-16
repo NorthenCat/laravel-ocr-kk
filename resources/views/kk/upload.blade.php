@@ -54,8 +54,8 @@
     <div class="max-w-2xl mx-auto">
         <div class="bg-white shadow-lg rounded-lg overflow-hidden">
             <div class="px-6 py-4 bg-gray-50 border-b border-gray-200">
-                <h3 class="text-lg font-semibold text-gray-900">Upload KK Data (JSON)</h3>
-                <p class="text-sm text-gray-600">Upload a JSON file containing KK and member data</p>
+                <h3 class="text-lg font-semibold text-gray-900">Upload KK Images</h3>
+                <p class="text-sm text-gray-600">Upload multiple image files containing KK data</p>
             </div>
 
             <form action="{{ route('kk.upload.process', [$rw->getDesa->id, $rw->id]) }}" method="POST"
@@ -87,8 +87,8 @@
                 @endif
 
                 <div>
-                    <label for="json_file" class="block text-sm font-medium text-gray-700 mb-2">
-                        JSON File <span class="text-red-500">*</span>
+                    <label for="kk_images" class="block text-sm font-medium text-gray-700 mb-2">
+                        KK Images <span class="text-red-500">*</span>
                     </label>
                     <div
                         class="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-md">
@@ -100,18 +100,21 @@
                                     stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
                             </svg>
                             <div class="flex text-sm text-gray-600">
-                                <label for="json_file"
+                                <label for="kk_images"
                                     class="relative cursor-pointer bg-white rounded-md font-medium text-indigo-600 hover:text-indigo-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-indigo-500">
-                                    <span>Upload a file</span>
-                                    <input id="json_file" name="json_file" type="file" accept=".json" class="sr-only"
-                                        required>
+                                    <span>Upload files</span>
+                                    <input id="kk_images" name="kk_images[]" type="file" accept="image/*" multiple
+                                        class="sr-only" required>
                                 </label>
                                 <p class="pl-1">or drag and drop</p>
                             </div>
-                            <p class="text-xs text-gray-500">JSON files up to 10MB</p>
+                            <p class="text-xs text-gray-500">PNG, JPG, JPEG files up to 10MB each</p>
                         </div>
                     </div>
-                    @error('json_file')
+                    @error('kk_images')
+                    <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
+                    @enderror
+                    @error('kk_images.*')
                     <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
                     @enderror
                 </div>
@@ -126,14 +129,14 @@
                             </svg>
                         </div>
                         <div class="ml-3">
-                            <h4 class="text-sm font-medium text-blue-800">Expected JSON Format</h4>
+                            <h4 class="text-sm font-medium text-blue-800">Upload Instructions</h4>
                             <div class="mt-2 text-sm text-blue-700">
-                                <p>The JSON file should contain a structure with:</p>
+                                <p>You can upload multiple KK image files at once:</p>
                                 <ul class="list-disc list-inside mt-1">
-                                    <li><code>"pending"</code> array with KK data items</li>
-                                    <li>Each item should have <code>"filename"</code> and <code>"raw"</code> fields</li>
-                                    <li>Data will be processed in batches of 5 and sent to the configured N8N webhook
-                                    </li>
+                                    <li>Supported formats: PNG, JPG, JPEG</li>
+                                    <li>Maximum file size: 10MB per image</li>
+                                    <li>Images will be processed using OCR to extract KK data</li>
+                                    <li>Processing will be done in the background</li>
                                 </ul>
                             </div>
                         </div>

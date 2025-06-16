@@ -14,7 +14,7 @@ Route::middleware(['guest'])->group(function () {
 
 });
 
-Route::middleware('auth')->group(function () {
+Route::middleware(['auth', 'role:admin|super-admin'])->group(function () {
     // Dashboard Route
     Route::get('/dashboard', [\App\Http\Controllers\DasboardController::class, 'index'])->name('dashboard');
 
@@ -71,8 +71,8 @@ Route::middleware('auth')->group(function () {
     Route::patch('/desa/{desa}/rw/{rw}/failed-files/{file}/mark-processed', [\App\Http\Controllers\FailedKkFileController::class, 'markAsProcessed'])->name('failed-files.mark-processed');
     Route::delete('/desa/{desa}/rw/{rw}/failed-files/{file}', [\App\Http\Controllers\FailedKkFileController::class, 'destroy'])->name('failed-files.destroy');
 
-    Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
 });
+Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
 
 
 Route::get('/', function () {

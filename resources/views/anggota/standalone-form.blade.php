@@ -234,6 +234,124 @@
                             value="{{ old('status_perkawinan', $anggota->status_perkawinan) }}"
                             class="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
                     </div>
+
+                    <div>
+                        <label for="status_hubungan_dalam_keluarga"
+                            class="block text-sm font-medium text-gray-700 mb-2">Hubungan dalam Keluarga</label>
+                        <input type="text" id="status_hubungan_dalam_keluarga" name="status_hubungan_dalam_keluarga"
+                            value="{{ old('status_hubungan_dalam_keluarga', $anggota->status_hubungan_dalam_keluarga) }}"
+                            class="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                    </div>
+
+                    <div>
+                        <label for="golongan_darah" class="block text-sm font-medium text-gray-700 mb-2">Golongan
+                            Darah</label>
+                        <input type="text" id="golongan_darah" name="golongan_darah"
+                            value="{{ old('golongan_darah', $anggota->golongan_darah) }}"
+                            class="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                    </div>
+
+                    <div>
+                        <label for="kewarganegaraan"
+                            class="block text-sm font-medium text-gray-700 mb-2">Kewarganegaraan</label>
+                        <input type="text" id="kewarganegaraan" name="kewarganegaraan"
+                            value="{{ old('kewarganegaraan', $anggota->kewarganegaraan) }}"
+                            class="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                    </div>
+
+                    <div>
+                        <label for="no_paspor" class="block text-sm font-medium text-gray-700 mb-2">No. Paspor</label>
+                        <input type="text" id="no_paspor" name="no_paspor"
+                            value="{{ old('no_paspor', $anggota->no_paspor) }}"
+                            class="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                    </div>
+
+                    <div>
+                        <label for="no_kitap" class="block text-sm font-medium text-gray-700 mb-2">No. KITAP</label>
+                        <input type="text" id="no_kitap" name="no_kitap"
+                            value="{{ old('no_kitap', $anggota->no_kitap) }}"
+                            class="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                    </div>
+
+                    <div>
+                        <label for="ayah" class="block text-sm font-medium text-gray-700 mb-2">Nama Ayah</label>
+                        <input type="text" id="ayah" name="ayah" value="{{ old('ayah', $anggota->ayah) }}"
+                            class="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                    </div>
+
+                    <div>
+                        <label for="ibu" class="block text-sm font-medium text-gray-700 mb-2">Nama Ibu</label>
+                        <input type="text" id="ibu" name="ibu" value="{{ old('ibu', $anggota->ibu) }}"
+                            class="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                    </div>
+
+                    <!-- Additional KK-related fields -->
+                    <div class="md:col-span-2">
+                        <h4 class="text-lg font-medium text-gray-900 mb-4 border-b pb-2">Informasi Alamat</h4>
+                    </div>
+
+                    <div>
+                        <label for="alamat" class="block text-sm font-medium text-gray-700 mb-2">Alamat</label>
+                        <textarea id="alamat" name="alamat" rows="2"
+                            class="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">{{ old('alamat', $anggota->alamat) }}</textarea>
+                    </div>
+
+                    <div>
+                        <label for="rt" class="block text-sm font-medium text-gray-700 mb-2">RT</label>
+                        <input type="text" id="rt" name="rt" value="{{ old('rt', $anggota->rt) }}"
+                            class="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                    </div>
+
+                    <div>
+                        <label for="rw" class="block text-sm font-medium text-gray-700 mb-2">RW</label>
+                        <input type="text" id="rw" name="rw" value="{{ old('rw', $anggota->rw) }}"
+                            class="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                    </div>
+
+                    <div>
+                        <label for="kode_pos" class="block text-sm font-medium text-gray-700 mb-2">Kode Pos</label>
+                        <input type="text" id="kode_pos" name="kode_pos"
+                            value="{{ old('kode_pos', $anggota->kode_pos) }}"
+                            class="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                    </div>
+
+                    <div>
+                        <label for="desa_kelurahan"
+                            class="block text-sm font-medium text-gray-700 mb-2">Desa/Kelurahan</label>
+                        <input type="text" id="desa_kelurahan" name="desa_kelurahan"
+                            value="{{ old('desa_kelurahan', $anggota->desa_kelurahan) }}"
+                            class="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                    </div>
+
+                    <div>
+                        <label for="kecamatan" class="block text-sm font-medium text-gray-700 mb-2">Kecamatan</label>
+                        <input type="text" id="kecamatan" name="kecamatan"
+                            value="{{ old('kecamatan', $anggota->kecamatan) }}"
+                            class="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                    </div>
+
+                    <div>
+                        <label for="kabupaten_kota"
+                            class="block text-sm font-medium text-gray-700 mb-2">Kabupaten/Kota</label>
+                        <input type="text" id="kabupaten_kota" name="kabupaten_kota"
+                            value="{{ old('kabupaten_kota', $anggota->kabupaten_kota) }}"
+                            class="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                    </div>
+
+                    <div>
+                        <label for="provinsi" class="block text-sm font-medium text-gray-700 mb-2">Provinsi</label>
+                        <input type="text" id="provinsi" name="provinsi"
+                            value="{{ old('provinsi', $anggota->provinsi) }}"
+                            class="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                    </div>
+
+                    <div>
+                        <label for="kk_disahkan_tanggal" class="block text-sm font-medium text-gray-700 mb-2">KK
+                            Disahkan Tanggal</label>
+                        <input type="date" id="kk_disahkan_tanggal" name="kk_disahkan_tanggal"
+                            value="{{ old('kk_disahkan_tanggal', $anggota->kk_disahkan_tanggal ? $anggota->kk_disahkan_tanggal->format('Y-m-d') : '') }}"
+                            class="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                    </div>
                 </div>
 
                 <div class="flex justify-end space-x-3 pt-6 border-t border-gray-200">

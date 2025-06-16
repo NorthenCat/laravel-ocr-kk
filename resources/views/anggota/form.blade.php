@@ -272,6 +272,125 @@
                         <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
                         @enderror
                     </div>
+
+                    <div>
+                        <label for="no_paspor" class="block text-sm font-medium text-gray-700 mb-2">No. Paspor</label>
+                        <input type="text" id="no_paspor" name="no_paspor"
+                            value="{{ old('no_paspor', isset($anggota) ? $anggota->no_paspor : '') }}"
+                            class="block w-full px-3 py-2 border @error('no_paspor') border-red-300 @else border-gray-300 @enderror rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                        @error('no_paspor')
+                        <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
+                        @enderror
+                    </div>
+
+                    <div>
+                        <label for="no_kitap" class="block text-sm font-medium text-gray-700 mb-2">No. KITAP</label>
+                        <input type="text" id="no_kitap" name="no_kitap"
+                            value="{{ old('no_kitap', isset($anggota) ? $anggota->no_kitap : '') }}"
+                            class="block w-full px-3 py-2 border @error('no_kitap') border-red-300 @else border-gray-300 @enderror rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                        @error('no_kitap')
+                        <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
+                        @enderror
+                    </div>
+                </div>
+
+                <!-- Additional Information Section -->
+                <div class="border-t border-gray-200 pt-6">
+                    <h4 class="text-lg font-medium text-gray-900 mb-4">Informasi Alamat</h4>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div class="md:col-span-2">
+                            <label for="alamat" class="block text-sm font-medium text-gray-700 mb-2">Alamat</label>
+                            <textarea id="alamat" name="alamat" rows="2"
+                                class="block w-full px-3 py-2 border @error('alamat') border-red-300 @else border-gray-300 @enderror rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">{{ old('alamat', isset($anggota) ? $anggota->alamat : '') }}</textarea>
+                            @error('alamat')
+                            <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
+                            @enderror
+                        </div>
+
+                        <div>
+                            <label for="rt" class="block text-sm font-medium text-gray-700 mb-2">RT</label>
+                            <input type="text" id="rt" name="rt"
+                                value="{{ old('rt', isset($anggota) ? $anggota->rt : '') }}"
+                                class="block w-full px-3 py-2 border @error('rt') border-red-300 @else border-gray-300 @enderror rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                            @error('rt')
+                            <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
+                            @enderror
+                        </div>
+
+                        <div>
+                            <label for="rw" class="block text-sm font-medium text-gray-700 mb-2">RW</label>
+                            <input type="text" id="rw" name="rw"
+                                value="{{ old('rw', isset($anggota) ? $anggota->rw : '') }}"
+                                class="block w-full px-3 py-2 border @error('rw') border-red-300 @else border-gray-300 @enderror rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                            @error('rw')
+                            <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
+                            @enderror
+                        </div>
+
+                        <div>
+                            <label for="kode_pos" class="block text-sm font-medium text-gray-700 mb-2">Kode Pos</label>
+                            <input type="text" id="kode_pos" name="kode_pos"
+                                value="{{ old('kode_pos', isset($anggota) ? $anggota->kode_pos : '') }}"
+                                class="block w-full px-3 py-2 border @error('kode_pos') border-red-300 @else border-gray-300 @enderror rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                            @error('kode_pos')
+                            <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
+                            @enderror
+                        </div>
+
+                        <div>
+                            <label for="desa_kelurahan"
+                                class="block text-sm font-medium text-gray-700 mb-2">Desa/Kelurahan</label>
+                            <input type="text" id="desa_kelurahan" name="desa_kelurahan"
+                                value="{{ old('desa_kelurahan', isset($anggota) ? $anggota->desa_kelurahan : '') }}"
+                                class="block w-full px-3 py-2 border @error('desa_kelurahan') border-red-300 @else border-gray-300 @enderror rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                            @error('desa_kelurahan')
+                            <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
+                            @enderror
+                        </div>
+
+                        <div>
+                            <label for="kecamatan"
+                                class="block text-sm font-medium text-gray-700 mb-2">Kecamatan</label>
+                            <input type="text" id="kecamatan" name="kecamatan"
+                                value="{{ old('kecamatan', isset($anggota) ? $anggota->kecamatan : '') }}"
+                                class="block w-full px-3 py-2 border @error('kecamatan') border-red-300 @else border-gray-300 @enderror rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                            @error('kecamatan')
+                            <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
+                            @enderror
+                        </div>
+
+                        <div>
+                            <label for="kabupaten_kota"
+                                class="block text-sm font-medium text-gray-700 mb-2">Kabupaten/Kota</label>
+                            <input type="text" id="kabupaten_kota" name="kabupaten_kota"
+                                value="{{ old('kabupaten_kota', isset($anggota) ? $anggota->kabupaten_kota : '') }}"
+                                class="block w-full px-3 py-2 border @error('kabupaten_kota') border-red-300 @else border-gray-300 @enderror rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                            @error('kabupaten_kota')
+                            <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
+                            @enderror
+                        </div>
+
+                        <div>
+                            <label for="provinsi" class="block text-sm font-medium text-gray-700 mb-2">Provinsi</label>
+                            <input type="text" id="provinsi" name="provinsi"
+                                value="{{ old('provinsi', isset($anggota) ? $anggota->provinsi : '') }}"
+                                class="block w-full px-3 py-2 border @error('provinsi') border-red-300 @else border-gray-300 @enderror rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                            @error('provinsi')
+                            <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
+                            @enderror
+                        </div>
+
+                        <div>
+                            <label for="kk_disahkan_tanggal" class="block text-sm font-medium text-gray-700 mb-2">KK
+                                Disahkan Tanggal</label>
+                            <input type="date" id="kk_disahkan_tanggal" name="kk_disahkan_tanggal"
+                                value="{{ old('kk_disahkan_tanggal', isset($anggota) && $anggota->kk_disahkan_tanggal ? $anggota->kk_disahkan_tanggal->format('Y-m-d') : '') }}"
+                                class="block w-full px-3 py-2 border @error('kk_disahkan_tanggal') border-red-300 @else border-gray-300 @enderror rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                            @error('kk_disahkan_tanggal')
+                            <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
+                            @enderror
+                        </div>
+                    </div>
                 </div>
 
                 <div class="flex justify-end space-x-3 pt-6 border-t border-gray-200">

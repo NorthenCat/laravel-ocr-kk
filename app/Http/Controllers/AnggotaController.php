@@ -49,6 +49,15 @@ class AnggotaController extends Controller
             'no_kitap' => 'nullable|string|max:20',
             'ayah' => 'nullable|string|max:255',
             'ibu' => 'nullable|string|max:255',
+            'alamat' => 'nullable|string',
+            'rt' => 'nullable|string|max:10',
+            'rw' => 'nullable|string|max:10',
+            'kode_pos' => 'nullable|string|max:10',
+            'desa_kelurahan' => 'nullable|string|max:255',
+            'kecamatan' => 'nullable|string|max:255',
+            'kabupaten_kota' => 'nullable|string|max:255',
+            'provinsi' => 'nullable|string|max:255',
+            'kk_disahkan_tanggal' => 'nullable|date',
         ]);
 
         $kk = KK::where('rw_id', $rw_id)->findOrFail($kk_id);
@@ -71,6 +80,15 @@ class AnggotaController extends Controller
             'no_kitap' => $request->no_kitap,
             'ayah' => $request->ayah,
             'ibu' => $request->ibu,
+            'alamat' => $request->alamat,
+            'rt' => $request->rt,
+            'rw' => $request->rw,
+            'kode_pos' => $request->kode_pos,
+            'desa_kelurahan' => $request->desa_kelurahan,
+            'kecamatan' => $request->kecamatan,
+            'kabupaten_kota' => $request->kabupaten_kota,
+            'provinsi' => $request->provinsi,
+            'kk_disahkan_tanggal' => $request->kk_disahkan_tanggal,
         ]);
 
         return redirect()->route('kk.index', [$desa_id, $rw_id, $kk_id])
@@ -127,6 +145,15 @@ class AnggotaController extends Controller
             'no_kitap' => 'nullable|string|max:20',
             'ayah' => 'nullable|string|max:255',
             'ibu' => 'nullable|string|max:255',
+            'alamat' => 'nullable|string',
+            'rt' => 'nullable|string|max:10',
+            'rw' => 'nullable|string|max:10',
+            'kode_pos' => 'nullable|string|max:10',
+            'desa_kelurahan' => 'nullable|string|max:255',
+            'kecamatan' => 'nullable|string|max:255',
+            'kabupaten_kota' => 'nullable|string|max:255',
+            'provinsi' => 'nullable|string|max:255',
+            'kk_disahkan_tanggal' => 'nullable|date',
         ]);
 
         $anggota->update([
@@ -146,6 +173,15 @@ class AnggotaController extends Controller
             'no_kitap' => $request->no_kitap,
             'ayah' => $request->ayah,
             'ibu' => $request->ibu,
+            'alamat' => $request->alamat,
+            'rt' => $request->rt,
+            'rw' => $request->rw,
+            'kode_pos' => $request->kode_pos,
+            'desa_kelurahan' => $request->desa_kelurahan,
+            'kecamatan' => $request->kecamatan,
+            'kabupaten_kota' => $request->kabupaten_kota,
+            'provinsi' => $request->provinsi,
+            'kk_disahkan_tanggal' => $request->kk_disahkan_tanggal,
         ]);
 
         return redirect()->route('kk.index', [$desa_id, $rw_id, $kk_id])
@@ -223,6 +259,15 @@ class AnggotaController extends Controller
             'no_kitap' => 'nullable|string|max:20',
             'ayah' => 'nullable|string|max:255',
             'ibu' => 'nullable|string|max:255',
+            'alamat' => 'nullable|string',
+            'rt' => 'nullable|string|max:10',
+            'rw' => 'nullable|string|max:10',
+            'kode_pos' => 'nullable|string|max:10',
+            'desa_kelurahan' => 'nullable|string|max:255',
+            'kecamatan' => 'nullable|string|max:255',
+            'kabupaten_kota' => 'nullable|string|max:255',
+            'provinsi' => 'nullable|string|max:255',
+            'kk_disahkan_tanggal' => 'nullable|date',
             'no_kk' => 'nullable|string|max:20',
             'assign_to_kk' => 'nullable|exists:kk,id',
         ]);
@@ -291,6 +336,15 @@ class AnggotaController extends Controller
             'no_kitap' => $request->no_kitap,
             'ayah' => $request->ayah,
             'ibu' => $request->ibu,
+            'alamat' => $request->alamat,
+            'rt' => $request->rt,
+            'rw' => $request->rw,
+            'kode_pos' => $request->kode_pos,
+            'desa_kelurahan' => $request->desa_kelurahan,
+            'kecamatan' => $request->kecamatan,
+            'kabupaten_kota' => $request->kabupaten_kota,
+            'provinsi' => $request->provinsi,
+            'kk_disahkan_tanggal' => $request->kk_disahkan_tanggal,
         ]);
 
         return redirect()->route('rw.index', [$desa_id, $rw_id])

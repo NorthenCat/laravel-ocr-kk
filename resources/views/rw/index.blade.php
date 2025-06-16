@@ -102,7 +102,8 @@
         <div class="flex justify-between items-center">
             <div>
                 <h1 class="text-3xl font-bold text-gray-900">{{ $rw->nama_rw }}</h1>
-                <p class="mt-2 text-gray-600">{{ $rw->getDesa->nama_desa }} - Manage KK and residents for this RW</p>
+                <p class="mt-2 text-gray-600">{{ $rw->getDesa->nama_desa }} - Manage KK and residents for this RW
+                </p>
             </div>
             <div class="flex space-x-3">
                 @if(!$rw->getCurrentJobStatus)
@@ -112,7 +113,7 @@
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                             d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
                     </svg>
-                    Upload JSON
+                    Upload Images
                 </a>
                 @else
                 <div
@@ -333,22 +334,6 @@
                 </button>
                 @endif
 
-                @if($failedFiles->count() > 0)
-                <button onclick="switchTab('failed-files')" id="tab-failed-files"
-                    class="tab-button py-4 px-1 border-b-2 font-medium text-sm whitespace-nowrap border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300">
-                    <div class="flex items-center">
-                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                        </svg>
-                        Failed Files
-                        <span class="ml-2 bg-red-100 text-red-600 py-0.5 px-2.5 rounded-full text-xs font-medium">
-                            {{ $failedFiles->count() }}
-                        </span>
-                    </div>
-                </button>
-                @endif
-
                 @if(isset($anggotaTanpaNik) && $anggotaTanpaNik->count() > 0)
                 <button onclick="switchTab('tanpa-nik')" id="tab-tanpa-nik"
                     class="tab-button py-4 px-1 border-b-2 font-medium text-sm whitespace-nowrap border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300">
@@ -361,6 +346,22 @@
                         Anggota Tanpa NIK
                         <span class="ml-2 bg-orange-100 text-orange-600 py-0.5 px-2.5 rounded-full text-xs font-medium">
                             {{ $anggotaTanpaNik->count() }}
+                        </span>
+                    </div>
+                </button>
+                @endif
+
+                @if($failedFiles->count() > 0)
+                <button onclick="switchTab('failed-files')" id="tab-failed-files"
+                    class="tab-button py-4 px-1 border-b-2 font-medium text-sm whitespace-nowrap border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300">
+                    <div class="flex items-center">
+                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        Failed Files
+                        <span class="ml-2 bg-red-100 text-red-600 py-0.5 px-2.5 rounded-full text-xs font-medium">
+                            {{ $failedFiles->count() }}
                         </span>
                     </div>
                 </button>
@@ -409,7 +410,9 @@
                             </div>
 
                             <div class="space-y-2 text-sm text-gray-600">
+
                                 <p><span class="font-medium">No. KK:</span> {{ $kk->no_kk }}</p>
+                                <p><span class="font-medium">Filename:</span> {{ $kk->filename }}</p>
                                 <p><span class="font-medium">Anggota:</span> {{ $kk->getWarga->count() }} orang</p>
                             </div>
 
@@ -445,7 +448,7 @@
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                         d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
                                 </svg>
-                                Upload JSON
+                                Upload Images
                             </a>
                             @else
                             <div
@@ -583,19 +586,18 @@
                                     <path fill-rule="evenodd"
                                         d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zm-4 4a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"
                                         clip-rule="evenodd" />
-                                </svg>
-                                <div class="text-sm text-yellow-800">
-                                    <p class="font-medium">Anggota-anggota ini memiliki KK sementara</p>
-                                    <p class="mt-1">Mereka memiliki KK dengan nomor 16 angka nol yang perlu diperbaiki.
-                                        Klik "Atur KK" untuk menambahkan ke KK yang sudah ada atau membuat KK baru
-                                        dengan nomor yang benar.</p>
-                                </div>
+                            </div>
+                            <div class="text-sm text-yellow-800">
+                                <p class="font-medium">Anggota-anggota ini memiliki KK sementara</p>
+                                <p class="mt-1">Mereka memiliki KK dengan nomor 16 angka nol yang perlu diperbaiki.
+                                    Klik "Atur KK" untuk menambahkan ke KK yang sudah ada atau membuat KK baru
+                                    dengan nomor yang benar.</p>
                             </div>
                         </div>
                     </div>
                 </div>
-                @endif
             </div>
+            @endif
             <!-- Anggota Tanpa NIK Tab -->
             @if(isset($anggotaTanpaNik) && $anggotaTanpaNik->count() > 0)
             <div id="content-tanpa-nik" class="tab-pane hidden">
@@ -616,89 +618,81 @@
                             Data Tidak Lengkap
                         </div>
                     </div>
-                </div>
 
-                <div class="p-6">
-                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                        @foreach($anggotaTanpaNik as $anggota)
-                        <div
-                            class="bg-orange-50 border border-orange-200 rounded-lg p-4 hover:shadow-md transition-shadow">
-                            <div class="flex items-start justify-between mb-3">
-                                <div class="flex-1">
-                                    <h4 class="text-sm font-semibold text-gray-900">{{ $anggota->nama_lengkap ??
-                                        'Nama tidak tersedia' }}</h4>
+                    <div class="p-6">
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                            @foreach($anggotaTanpaNik as $anggota)
+                            <div
+                                class="bg-orange-50 border border-orange-200 rounded-lg p-4 hover:shadow-md transition-shadow">
+                                <div class="flex items-start justify-between mb-3">
+                                    <div class="flex-1">
+                                        <h4 class="text-sm font-semibold text-gray-900">{{ $anggota->nama_lengkap ??
+                                            'Nama tidak tersedia' }}</h4>
 
-                                    <div class="mt-2 text-xs text-red-600 font-medium">
-                                        <svg class="w-3 h-3 inline mr-1" fill="currentColor" viewBox="0 0 20 20">
-                                            <path fill-rule="evenodd"
-                                                d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
-                                                clip-rule="evenodd" />
-                                        </svg>
-                                        NIK: {{ $anggota->nik ?: 'Belum ada' }}
+                                        <div class="mt-2 text-xs text-red-600 font-medium">
+                                            <svg class="w-3 h-3 inline mr-1" fill="currentColor" viewBox="0 0 20 20">
+                                                <path fill-rule="evenodd"
+                                                    d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
+                                                    clip-rule="evenodd" />
+                                            </svg>
+                                            NIK: {{ $anggota->nik ?: 'Belum ada' }}
+                                        </div>
                                     </div>
-
-                                    <div class="mt-2 text-xs text-gray-600">
-                                        <p><span class="font-medium">KK:</span> {{ $anggota->getKk->no_kk }}</p>
-                                        <p><span class="font-medium">Kepala KK:</span> {{
-                                            $anggota->getKk->nama_kepala_keluarga }}</p>
-                                        @if($anggota->img_name)
-                                        <p><span class="font-medium">File:</span> {{ $anggota->img_name }}</p>
-                                        @endif
+                                    <div class="flex space-x-1 ml-2">
+                                        <a href="{{ route('anggota.edit', [$rw->getDesa->id, $rw->id, $anggota->getKk->id, $anggota->id]) }}"
+                                            class="text-orange-600 hover:text-orange-800" title="Edit">
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                    d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                            </svg>
+                                        </a>
+                                        <form
+                                            action="{{ route('anggota.destroy', [$rw->getDesa->id, $rw->id, $anggota->getKk->id, $anggota->id]) }}"
+                                            method="POST" class="inline">
+                                            @csrf
+                                            @method('DELETE')
+                                            <button type="submit" class="text-red-600 hover:text-red-800"
+                                                onclick="return confirm('Yakin ingin menghapus anggota ini?')"
+                                                title="Delete">
+                                                <svg class="w-4 h-4" fill="none" stroke="currentColor"
+                                                    viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round"
+                                                        stroke-width="2"
+                                                        d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                                </svg>
+                                            </button>
+                                        </form>
                                     </div>
                                 </div>
-                                <div class="flex space-x-1 ml-2">
+
+                                <div class="space-y-1 text-xs text-gray-600 mb-3">
+                                    @if($anggota->jenis_kelamin)
+                                    <p><span class="font-medium">Kelamin:</span> {{ $anggota->jenis_kelamin }}</p>
+                                    @endif
+                                    @if($anggota->tanggal_lahir)
+                                    <p><span class="font-medium">Lahir:</span> {{
+                                        $anggota->tanggal_lahir->format('d/m/Y') }}</p>
+                                    @endif
+                                    @if($anggota->tempat_lahir)
+                                    <p><span class="font-medium">Tempat:</span> {{ $anggota->tempat_lahir }}</p>
+                                    @endif
+                                </div>
+
+                                <div class="flex justify-between items-center pt-3 border-t border-orange-200">
+                                    <span class="text-xs text-red-700 font-medium">NIK Kosong</span>
                                     <a href="{{ route('anggota.edit', [$rw->getDesa->id, $rw->id, $anggota->getKk->id, $anggota->id]) }}"
-                                        class="text-orange-600 hover:text-orange-800" title="Edit">
-                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        class="inline-flex items-center px-2 py-1 bg-orange-100 text-orange-700 text-xs font-medium rounded hover:bg-orange-200">
+                                        <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                                 d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                                         </svg>
+                                        Lengkapi NIK
                                     </a>
-                                    <form
-                                        action="{{ route('anggota.destroy', [$rw->getDesa->id, $rw->id, $anggota->getKk->id, $anggota->id]) }}"
-                                        method="POST" class="inline">
-                                        @csrf
-                                        @method('DELETE')
-                                        <button type="submit" class="text-red-600 hover:text-red-800"
-                                            onclick="return confirm('Yakin ingin menghapus anggota ini?')"
-                                            title="Delete">
-                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                    d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                            </svg>
-                                        </button>
-                                    </form>
                                 </div>
                             </div>
-
-                            <div class="space-y-1 text-xs text-gray-600 mb-3">
-                                @if($anggota->jenis_kelamin)
-                                <p><span class="font-medium">Kelamin:</span> {{ $anggota->jenis_kelamin }}</p>
-                                @endif
-                                @if($anggota->tanggal_lahir)
-                                <p><span class="font-medium">Lahir:</span> {{
-                                    $anggota->tanggal_lahir->format('d/m/Y') }}</p>
-                                @endif
-                                @if($anggota->tempat_lahir)
-                                <p><span class="font-medium">Tempat:</span> {{ $anggota->tempat_lahir }}</p>
-                                @endif
-                            </div>
-
-                            <div class="flex justify-between items-center pt-3 border-t border-orange-200">
-                                <span class="text-xs text-red-700 font-medium">NIK Kosong</span>
-                                <a href="{{ route('anggota.edit', [$rw->getDesa->id, $rw->id, $anggota->getKk->id, $anggota->id]) }}"
-                                    class="inline-flex items-center px-2 py-1 bg-orange-100 text-orange-700 text-xs font-medium rounded hover:bg-orange-200">
-                                    <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                            d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                                    </svg>
-                                    Lengkapi NIK
-                                </a>
-                            </div>
+                            @endforeach
                         </div>
-                        @endforeach
                     </div>
-
                     <div class="mt-4 p-3 bg-orange-100 rounded-lg">
                         <div class="flex items-start">
                             <svg class="w-5 h-5 text-orange-600 mr-2 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
@@ -708,7 +702,8 @@
                             </svg>
                             <div class="text-sm text-orange-800">
                                 <p class="font-medium">Anggota-anggota ini belum memiliki NIK yang valid</p>
-                                <p class="mt-1">NIK diperlukan untuk identifikasi resmi. Klik "Lengkapi NIK" untuk
+                                <p class="mt-1">NIK diperlukan untuk identifikasi resmi. Klik "Lengkapi NIK"
+                                    untuk
                                     menambahkan atau memperbaiki data NIK.</p>
                             </div>
                         </div>
@@ -723,7 +718,8 @@
                 <div class="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
                     <div>
                         <h3 class="text-lg font-medium text-gray-900">Files Requiring Manual Processing</h3>
-                        <p class="text-sm text-gray-600">Files that failed processing or contain non-KK data</p>
+                        <p class="text-sm text-gray-600">Files that failed processing or contain non-KK data
+                        </p>
                     </div>
                     <span
                         class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
@@ -757,7 +753,7 @@
                                 @foreach($failedFiles as $file)
                                 <tr class="hover:bg-gray-50">
                                     <td class="px-6 py-4 whitespace-nowrap">
-                                        <div class="text-sm font-medium text-gray-900">{{ $file->filename }}
+                                        <div class="text-sm font-medium text-gray-900">{{ $file->original_filename }}
                                         </div>
                                         @if($file->error_message)
                                         <div class="text-sm text-gray-500 truncate max-w-xs">{{
@@ -955,7 +951,7 @@
                     display: none !important;
                 }
             </style>
+            </>
         </div>
     </div>
-</div>
-@endsection
+    @endsection

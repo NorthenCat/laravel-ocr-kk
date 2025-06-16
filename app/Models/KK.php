@@ -30,4 +30,9 @@ class KK extends Model
     {
         return $this->hasMany(Anggota::class, 'kk_id', 'id');
     }
+
+    public function getFilenameAttribute()
+    {
+        return $this->getWarga()->first()?->img_name;
+    }
 }

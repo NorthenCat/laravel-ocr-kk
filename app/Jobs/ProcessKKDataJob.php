@@ -17,6 +17,7 @@ use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Carbon\Carbon;
 
@@ -28,17 +29,11 @@ class ProcessKKDataJob implements ShouldQueue
     protected $rwId;
     protected $desaId;
 
-    // Remove queue-specific properties for now
-    // public $queue = 'kk_processing';
-
     public function __construct($kkData, $desaId, $rwId)
     {
         $this->kkData = $kkData;
         $this->rwId = $rwId;
         $this->desaId = $desaId;
-
-        // Remove queue-specific setup for now
-        // $this->onQueue('kk_processing');
     }
 
     public function handle()
@@ -58,25 +53,33 @@ class ProcessKKDataJob implements ShouldQueue
                 throw new \Exception('N8N webhook URL not configured');
             }
 
-            // Prepare data for N8N
-            $payload = [
-                'filename' => $this->kkData['filename'],
-                'raw_text' => $this->kkData['raw'],
-                'rw_id' => $this->rwId,
-                'desa_id' => $this->desaId,
-                'error' => $this->kkData['error'],
-                'processed_at' => now()->toISOString()
-            ];
+            $filePath = $this->kkData['file_path'];
 
-            Log::info('Sending KK data to N8N', [
+            // Check if file exists
+            if (!Storage::disk('local')->exists($filePath)) {
+                throw new \Exception('Image file not found: ' . $filePath);
+            }
+
+            // Get the full system path to the file
+            $fullFilePath = Storage::disk('local')->path($filePath);
+
+            Log::info('Sending KK image to N8N for OCR', [
                 'filename' => $this->kkData['filename'],
                 'rw_id' => $this->rwId,
                 'batch_id' => $this->batch()->id,
-                'payload_size' => strlen($payload['raw_text'])
+                'file_path' => $filePath
             ]);
 
-            // Send to N8N and wait for response (no timeout)
-            $response = Http::post($setting->webhook_n8n, $payload);
+            // Send to N8N as multipart form data with the actual file
+            $response = Http::timeout(300)
+                ->attach('image', file_get_contents($fullFilePath), $this->kkData['filename'])
+                ->post($setting->webhook_n8n, [
+                    'filename' => $this->kkData['filename'],
+                    'original_filename' => $this->kkData['original_filename'] ?? $this->kkData['filename'],
+                    'rw_id' => $this->rwId,
+                    'desa_id' => $this->desaId,
+                    'processed_at' => now()->toISOString()
+                ]);
 
             if (!$response->successful()) {
                 throw new \Exception('N8N request failed with status: ' . $response->status() . ' - ' . $response->body());
@@ -84,17 +87,22 @@ class ProcessKKDataJob implements ShouldQueue
 
             $responseData = $response->json();
 
-            Log::info('Received response from N8N', [
+            Log::info('Received OCR response from N8N', [
                 'filename' => $this->kkData['filename'],
                 'response_status' => $response->status(),
                 'batch_id' => $this->batch()->id,
-                'response_data' => $responseData
+                'has_response_data' => !empty($responseData)
             ]);
+
+            // Delete the image file after successful processing)
+            Storage::disk('local')->delete($filePath);
 
             // Process the N8N response
             $this->processN8NResponse($responseData);
 
-            Log::info('KK data processed successfully', [
+
+
+            Log::info('KK image processed successfully and file deleted', [
                 'filename' => $this->kkData['filename'],
                 'rw_id' => $this->rwId,
                 'batch_id' => $this->batch()->id
@@ -104,7 +112,7 @@ class ProcessKKDataJob implements ShouldQueue
             // Update job status - increment failed jobs
             $this->updateJobProgress(true);
 
-            Log::error('Failed to process KK data', [
+            Log::error('Failed to process KK image', [
                 'filename' => $this->kkData['filename'] ?? 'unknown',
                 'error' => $e->getMessage(),
                 'rw_id' => $this->rwId,
@@ -155,7 +163,7 @@ class ProcessKKDataJob implements ShouldQueue
         // Handle array response - get first item
         $data = is_array($responseData) && isset($responseData[0]) ? $responseData[0] : $responseData;
 
-        Log::info('Processing N8N response data', [
+        Log::info('Processing N8N OCR response data', [
             'filename' => $this->kkData['filename'],
             'isKK' => $data['isKK'] ?? 'not_set',
             'has_anggota' => isset($data['AnggotaKeluarga']),
@@ -170,7 +178,9 @@ class ProcessKKDataJob implements ShouldQueue
                 'rw_id' => $this->rwId,
                 'batch_id' => $this->batch()->id,
                 'filename' => $this->kkData['filename'],
-                'raw_text' => $this->kkData['raw'],
+                'original_filename' => $this->kkData['original_filename'] ?? null,
+                'file_path' => $this->kkData['file_path'],
+                'raw_text' => $data['raw_text'] ?? null,
                 'failure_reason' => 'not_kk',
                 'error_message' => 'N8N response indicates this is not KK data',
                 'n8n_response' => $data,
@@ -184,14 +194,16 @@ class ProcessKKDataJob implements ShouldQueue
             return;
         }
 
-        // Check for AnggotaKeluarga (capital A)
+        // Check for AnggotaKeluarga
         if (!isset($data['AnggotaKeluarga']) || empty($data['AnggotaKeluarga'])) {
             // Save as failed file for manual processing
             FailedKkFile::create([
                 'rw_id' => $this->rwId,
                 'batch_id' => $this->batch()->id,
                 'filename' => $this->kkData['filename'],
-                'raw_text' => $this->kkData['raw'],
+                'original_filename' => $this->kkData['original_filename'] ?? null,
+                'file_path' => $this->kkData['file_path'],
+                'raw_text' => $data['raw_text'] ?? null,
                 'failure_reason' => 'no_anggota_data',
                 'error_message' => 'No AnggotaKeluarga data found in N8N response',
                 'n8n_response' => $data,
@@ -297,6 +309,19 @@ class ProcessKKDataJob implements ShouldQueue
                     'batch_id' => $this->batch()->id
                 ]);
                 DB::rollBack();
+                //create failed jobs
+                FailedKkFile::create([
+                    'rw_id' => $this->rwId,
+                    'batch_id' => $this->batch()->id,
+                    'filename' => $this->kkData['filename'],
+                    'original_filename' => $this->kkData['original_filename'] ?? null,
+                    'file_path' => $this->kkData['file_path'],
+                    'raw_text' => $data['raw_text'] ?? null,
+                    'failure_reason' => 'processing_error',
+                    'error_message' => 'KK already exists for this RW',
+                    'n8n_response' => $data,
+                ]);
+                DB::commit();
                 return;
             }
 
@@ -484,12 +509,14 @@ class ProcessKKDataJob implements ShouldQueue
         // Update job status when job fails permanently
         $this->updateJobProgress(true);
 
-        // Save as failed file for manual processing
+        // Save as failed file for manual processing (keep the image file)
         FailedKkFile::create([
             'rw_id' => $this->rwId,
             'batch_id' => $this->batch()->id ?? 'unknown',
             'filename' => $this->kkData['filename'] ?? 'unknown',
-            'raw_text' => $this->kkData['raw'] ?? null,
+            'original_filename' => $this->kkData['original_filename'] ?? null,
+            'file_path' => $this->kkData['file_path'] ?? null,
+            'raw_text' => null,
             'failure_reason' => 'processing_error',
             'error_message' => $exception->getMessage(),
         ]);
