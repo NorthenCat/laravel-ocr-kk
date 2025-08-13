@@ -152,6 +152,9 @@
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                 NIK</th>
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Status Dalam Keluarga</th>
+                            <th></th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                 Jenis Kelamin</th>
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                 Tanggal Lahir</th>
@@ -160,13 +163,22 @@
                         </tr>
                     </thead>
                     <tbody class="bg-white divide-y divide-gray-200">
-                        @foreach($kk->getWarga as $anggota)
+                        @foreach($kk->getWarga->sortBy(function($anggota) {
+                            $status = strtolower($anggota->status_hubungan_dalam_keluarga);
+                            if (str_contains($status, 'kepala keluarga')) return 1;
+                            if (str_contains($status, 'isteri') || str_contains($status, 'istri')) return 2;
+                            if (str_contains($status, 'anak')) return 3;
+                            return 4;
+                        }) as $anggota)
                         <tr class="hover:bg-gray-50">
                             <td class="px-6 py-4 whitespace-nowrap">
                                 <div class="text-sm font-medium text-gray-900">{{ $anggota->nama_lengkap }}</div>
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap">
                                 <div class="text-sm text-gray-500">{{ $anggota->nik }}</div>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <div class="text-sm text-gray-500">{{ $anggota->status_hubungan_dalam_keluarga }}</div>
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap">
                                 <div class="text-sm text-gray-500">{{ $anggota->jenis_kelamin }}</div>
