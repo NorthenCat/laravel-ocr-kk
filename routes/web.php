@@ -31,6 +31,7 @@ Route::middleware(['auth', 'role:admin|super-admin'])->group(function () {
     Route::put('/desa/{desa}/rw/{rw}', [\App\Http\Controllers\RwController::class, 'update'])->name('rw.update');
     Route::delete('/desa/{desa}/rw/{rw}', [\App\Http\Controllers\RwController::class, 'destroy'])->name('rw.destroy');
     Route::get('/desa/{desa}/rw/{rw}/export-excel', [\App\Http\Controllers\RwController::class, 'exportExcel'])->name('rw.export.excel');
+    Route::get('/desa/{desa}/rw/{rw}/export-excel-no-filename', [\App\Http\Controllers\RwController::class, 'exportExcelWithoutFilename'])->name('rw.export.excel.no-filename');
 
 
     // JSON Upload route for KK

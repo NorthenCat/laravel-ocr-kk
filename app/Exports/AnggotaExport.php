@@ -8,15 +8,19 @@ use Maatwebsite\Excel\Concerns\WithHeadings;
 use Maatwebsite\Excel\Concerns\WithMapping;
 use Maatwebsite\Excel\Concerns\WithCustomStartCell;
 use Maatwebsite\Excel\Concerns\ShouldAutoSize;
+use Maatwebsite\Excel\Concerns\WithColumnFormatting;
+use PhpOffice\PhpSpreadsheet\Style\NumberFormat;
 
-class AnggotaExport implements FromCollection, WithHeadings, WithMapping, WithCustomStartCell, ShouldAutoSize
+class AnggotaExport implements FromCollection, WithHeadings, WithMapping, WithCustomStartCell, ShouldAutoSize, WithColumnFormatting
 {
     protected $rwId;
     protected $rowNumber = 0;
+    protected $includeFilename;
 
-    public function __construct($rwId)
+    public function __construct($rwId, $includeFilename = true)
     {
         $this->rwId = $rwId;
+        $this->includeFilename = $includeFilename;
     }
 
     public function collection()
@@ -25,15 +29,21 @@ class AnggotaExport implements FromCollection, WithHeadings, WithMapping, WithCu
             ->whereHas('getKk', function ($query) {
                 $query->where('rw_id', $this->rwId);
             })
-            ->orderBy('nama_lengkap', 'asc')
+            ->orderBy('no_kk', 'asc')
             ->get();
     }
 
     public function headings(): array
     {
-        return [
+        $headings = [
             'NO',
-            'Filename',
+        ];
+
+        if ($this->includeFilename) {
+            $headings[] = 'Filename';
+        }
+
+        $headings = array_merge($headings, [
             'NIK',
             'NomorKK',
             'NamaLengkap',
@@ -108,18 +118,26 @@ class AnggotaExport implements FromCollection, WithHeadings, WithMapping, WithCu
             'sdgs30',
             'sdgs31',
             'sdgs32'
-        ];
+        ]);
+
+        return $headings;
     }
 
     public function map($anggota): array
     {
         $this->rowNumber++;
 
-        return [
+        $data = [
             $this->rowNumber,
-            $anggota->img_name ?? '',
+        ];
+
+        if ($this->includeFilename) {
+            $data[] = $anggota->img_name ?? '';
+        }
+
+        $data = array_merge($data, [
             $anggota->nik ?? '',
-            $anggota->getKk->no_kk ?? '',
+            $anggota->no_kk ?? '',
             $anggota->nama_lengkap ?? '',
             $anggota->jenis_kelamin ?? '',
             $anggota->tempat_lahir ?? '',
@@ -193,11 +211,30 @@ class AnggotaExport implements FromCollection, WithHeadings, WithMapping, WithCu
             '',
             '',
             ''
-        ];
+        ]);
+
+        return $data;
     }
 
     public function startCell(): string
     {
         return 'A1';
+    }
+
+    public function columnFormats(): array
+    {
+        $formats = [];
+
+        if ($this->includeFilename) {
+            // NIK column (C) and NomorKK column (D) with filename included
+            $formats['C'] = NumberFormat::FORMAT_NUMBER;
+            $formats['D'] = NumberFormat::FORMAT_NUMBER;
+        } else {
+            // NIK column (B) and NomorKK column (C) without filename
+            $formats['B'] = NumberFormat::FORMAT_NUMBER;
+            $formats['C'] = NumberFormat::FORMAT_NUMBER;
+        }
+
+        return $formats;
     }
 }

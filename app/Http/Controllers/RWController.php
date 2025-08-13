@@ -155,6 +155,18 @@ class RWController extends Controller
 
         $fileName = 'KK-OCR_' . $rw->getDesa->nama_desa . '_' . $rw->nama_rw . '_' . now()->format('Y-m-d_H-i-s') . '.xlsx';
 
-        return Excel::download(new AnggotaExport($rw_id), $fileName);
+        return Excel::download(new AnggotaExport($rw_id, true), $fileName);
+    }
+
+    /**
+     * Export to Excel without filename.
+     */
+    public function exportExcelWithoutFilename($desa_id, $rw_id)
+    {
+        $rw = RW::with('getDesa')->where('desa_id', $desa_id)->findOrFail($rw_id);
+
+        $fileName = 'KK-OCR_NoFilename_' . $rw->getDesa->nama_desa . '_' . $rw->nama_rw . '_' . now()->format('Y-m-d_H-i-s') . '.xlsx';
+
+        return Excel::download(new AnggotaExport($rw_id, false), $fileName);
     }
 }

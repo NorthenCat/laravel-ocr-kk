@@ -87,11 +87,18 @@
                 @endif
 
                 <div>
-                    <label for="kk_images" class="block text-sm font-medium text-gray-700 mb-2">
-                        KK Images <span class="text-red-500">*</span>
-                    </label>
-                    <div
-                        class="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-md">
+                    <div class="flex items-center justify-between mb-2">
+                        <label for="kk_images" class="block text-sm font-medium text-gray-700">
+                            KK Images <span class="text-red-500">*</span>
+                        </label>
+                        <span id="file-counter" class="text-sm text-gray-500 hidden">
+                            <span id="file-count">0</span> file(s) selected
+                        </span>
+                    </div>
+
+                    <!-- Drop Zone -->
+                    <div id="drop-zone"
+                        class="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-md transition-colors duration-200 hover:border-indigo-400 hover:bg-gray-50">
                         <div class="space-y-1 text-center">
                             <svg class="mx-auto h-12 w-12 text-gray-400" stroke="currentColor" fill="none"
                                 viewBox="0 0 48 48">
@@ -111,6 +118,19 @@
                             <p class="text-xs text-gray-500">PNG, JPG, JPEG files up to 10MB each</p>
                         </div>
                     </div>
+
+                    <!-- File Preview Area -->
+                    <div id="file-preview" class="mt-4 hidden">
+                        <h4 class="text-sm font-medium text-gray-700 mb-3">Selected Files:</h4>
+                        <div id="file-list" class="space-y-2 max-h-60 overflow-y-auto">
+                            <!-- File items will be inserted here -->
+                        </div>
+                        <button type="button" id="clear-files"
+                            class="mt-3 text-sm text-red-600 hover:text-red-800 font-medium">
+                            Clear all files
+                        </button>
+                    </div>
+
                     @error('kk_images')
                     <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
                     @enderror
@@ -165,4 +185,156 @@
         </div>
     </div>
 </div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+    const dropZone = document.getElementById('drop-zone');
+    const fileInput = document.getElementById('kk_images');
+    const filePreview = document.getElementById('file-preview');
+    const fileList = document.getElementById('file-list');
+    const fileCounter = document.getElementById('file-counter');
+    const fileCount = document.getElementById('file-count');
+    const clearFilesBtn = document.getElementById('clear-files');
+
+    let selectedFiles = [];
+
+    // File input change handler
+    fileInput.addEventListener('change', function(e) {
+        handleFiles(e.target.files);
+    });
+
+    // Drag and drop handlers
+    dropZone.addEventListener('dragover', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        dropZone.classList.add('border-indigo-500', 'bg-indigo-50');
+        dropZone.classList.remove('border-gray-300');
+    });
+
+    dropZone.addEventListener('dragleave', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        dropZone.classList.remove('border-indigo-500', 'bg-indigo-50');
+        dropZone.classList.add('border-gray-300');
+    });
+
+    dropZone.addEventListener('drop', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        dropZone.classList.remove('border-indigo-500', 'bg-indigo-50');
+        dropZone.classList.add('border-gray-300');
+
+        const files = e.dataTransfer.files;
+        handleFiles(files);
+    });
+
+    // Clear files handler
+    clearFilesBtn.addEventListener('click', function() {
+        selectedFiles = [];
+        updateFileInput();
+        updateDisplay();
+    });
+
+    function handleFiles(files) {
+        const validTypes = ['image/jpeg', 'image/jpg', 'image/png'];
+        const maxSize = 10 * 1024 * 1024; // 10MB
+
+        Array.from(files).forEach(file => {
+            if (!validTypes.includes(file.type)) {
+                alert(`File "${file.name}" is not a valid image type. Please select PNG, JPG, or JPEG files.`);
+                return;
+            }
+
+            if (file.size > maxSize) {
+                alert(`File "${file.name}" is too large. Maximum file size is 10MB.`);
+                return;
+            }
+
+            // Check if file already selected
+            const existingFile = selectedFiles.find(f => f.name === file.name && f.size === file.size);
+            if (!existingFile) {
+                selectedFiles.push(file);
+            }
+        });
+
+        updateFileInput();
+        updateDisplay();
+    }
+
+    function updateFileInput() {
+        // Create a new DataTransfer object to update the file input
+        const dt = new DataTransfer();
+        selectedFiles.forEach(file => {
+            dt.items.add(file);
+        });
+        fileInput.files = dt.files;
+    }
+
+    function updateDisplay() {
+        if (selectedFiles.length === 0) {
+            filePreview.classList.add('hidden');
+            fileCounter.classList.add('hidden');
+            return;
+        }
+
+        // Show counter
+        fileCounter.classList.remove('hidden');
+        fileCount.textContent = selectedFiles.length;
+
+        // Show preview
+        filePreview.classList.remove('hidden');
+
+        // Update file list
+        fileList.innerHTML = '';
+        selectedFiles.forEach((file, index) => {
+            const fileItem = createFileItem(file, index);
+            fileList.appendChild(fileItem);
+        });
+    }
+
+    function createFileItem(file, index) {
+        const div = document.createElement('div');
+        div.className = 'flex items-center justify-between p-3 bg-gray-50 rounded-lg border';
+
+        const sizeText = formatFileSize(file.size);
+
+        div.innerHTML = `
+            <div class="flex items-center space-x-3">
+                <div class="flex-shrink-0">
+                    <svg class="h-8 w-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                    </svg>
+                </div>
+                <div class="flex-1 min-w-0">
+                    <p class="text-sm font-medium text-gray-900 truncate">${file.name}</p>
+                    <p class="text-sm text-gray-500">${sizeText}</p>
+                </div>
+            </div>
+            <button type="button" class="remove-file text-red-600 hover:text-red-800" data-index="${index}">
+                <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                </svg>
+            </button>
+        `;
+
+        // Add remove file handler
+        const removeBtn = div.querySelector('.remove-file');
+        removeBtn.addEventListener('click', function() {
+            selectedFiles.splice(index, 1);
+            updateFileInput();
+            updateDisplay();
+        });
+
+        return div;
+    }
+
+    function formatFileSize(bytes) {
+        if (bytes === 0) return '0 Bytes';
+        const k = 1024;
+        const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+        const i = Math.floor(Math.log(bytes) / Math.log(k));
+        return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+    }
+});
+</script>
 @endsection

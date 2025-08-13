@@ -125,14 +125,57 @@
                     Processing...
                 </div>
                 @endif
-                <a href="{{ route('rw.export.excel', [$rw->getDesa->id, $rw->id]) }}"
-                    class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-emerald-600 hover:bg-emerald-700">
-                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                    </svg>
-                    Export Excel
-                </a>
+                <!-- Export Excel Dropdown -->
+                <div class="relative inline-block text-left">
+                    <div>
+                        <button type="button"
+                            class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-emerald-600 hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500"
+                            id="export-menu-button" aria-expanded="true" aria-haspopup="true">
+                            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                            </svg>
+                            Export Excel
+                            <svg class="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M19 9l-7 7-7-7" />
+                            </svg>
+                        </button>
+                    </div>
+
+                    <div class="origin-top-right absolute right-0 mt-2 w-64 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 focus:outline-none hidden"
+                        role="menu" aria-orientation="vertical" aria-labelledby="export-menu-button" tabindex="-1"
+                        id="export-dropdown">
+                        <div class="py-1" role="none">
+                            <a href="{{ route('rw.export.excel', [$rw->getDesa->id, $rw->id]) }}"
+                                class="group flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                                role="menuitem" tabindex="-1">
+                                <svg class="w-4 h-4 mr-3 text-emerald-500" fill="none" stroke="currentColor"
+                                    viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                </svg>
+                                <div>
+                                    <div class="font-medium">With Filename</div>
+                                    <div class="text-xs text-gray-500">Include image filename column</div>
+                                </div>
+                            </a>
+                            <a href="{{ route('rw.export.excel.no-filename', [$rw->getDesa->id, $rw->id]) }}"
+                                class="group flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                                role="menuitem" tabindex="-1">
+                                <svg class="w-4 h-4 mr-3 text-emerald-500" fill="none" stroke="currentColor"
+                                    viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                </svg>
+                                <div>
+                                    <div class="font-medium">Without Filename</div>
+                                    <div class="text-xs text-gray-500">Exclude image filename column</div>
+                                </div>
+                            </a>
+                        </div>
+                    </div>
+                </div>
                 <a href="{{ route('kk.create', [$rw->getDesa->id, $rw->id]) }}"
                     class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700">
                     <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -232,6 +275,28 @@
             @endif
         </script>
         @endif
+
+        <script>
+            // Export dropdown functionality
+        document.addEventListener('DOMContentLoaded', function() {
+            const exportButton = document.getElementById('export-menu-button');
+            const exportDropdown = document.getElementById('export-dropdown');
+
+            if (exportButton && exportDropdown) {
+                exportButton.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    exportDropdown.classList.toggle('hidden');
+                });
+
+                // Close dropdown when clicking outside
+                document.addEventListener('click', function(e) {
+                    if (!exportButton.contains(e.target) && !exportDropdown.contains(e.target)) {
+                        exportDropdown.classList.add('hidden');
+                    }
+                });
+            }
+        });
+        </script>
 
         @if($rw->getJobStatus->count() > 0 && !$rw->getCurrentJobStatus)
         <!-- Recent Job History -->
