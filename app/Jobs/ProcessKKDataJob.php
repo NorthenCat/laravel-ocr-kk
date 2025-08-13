@@ -144,9 +144,12 @@ class ProcessKKDataJob implements ShouldQueue
                 $totalCompleted = $jobStatus->processed_jobs + $jobStatus->failed_jobs;
                 if ($totalCompleted >= $jobStatus->total_jobs) {
                     $jobStatus->update([
-                        'status' => $jobStatus->failed_jobs > 0 ? 'completed' : 'completed', // Always completed when finished
+                        'status' => 'completed',
                         'completed_at' => now()
                     ]);
+                } else {
+                    // Update status to running if still processing
+                    $jobStatus->update(['status' => 'running']);
                 }
             }
         } catch (\Exception $e) {

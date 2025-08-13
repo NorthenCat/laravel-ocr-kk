@@ -156,7 +156,13 @@
         <!-- Active Job Status Card -->
         <div class="mt-6 bg-blue-50 border border-blue-200 rounded-lg p-4" id="job-status-card">
             <div class="flex items-center justify-between mb-3">
-                <h4 class="text-sm font-medium text-blue-800">Processing KK Data</h4>
+                <h4 class="text-sm font-medium text-blue-800">
+                    @if($rw->getCurrentJobStatus->status === 'completed')
+                    KK Data Processing Complete
+                    @else
+                    Processing KK Data
+                    @endif
+                </h4>
                 <span class="text-xs text-blue-600">Batch ID: {{ $rw->getCurrentJobStatus->batch_id }}</span>
             </div>
 
@@ -167,7 +173,12 @@
 
             <div class="flex justify-between text-xs text-blue-700">
                 <span>{{ $rw->getCurrentJobStatus->processed_jobs }} / {{ $rw->getCurrentJobStatus->total_jobs }}
-                    completed</span>
+                    @if($rw->getCurrentJobStatus->status === 'completed')
+                    completed
+                    @else
+                    processed
+                    @endif
+                </span>
                 <span>{{ $rw->getCurrentJobStatus->getProgressPercentage() }}%</span>
             </div>
 
@@ -178,7 +189,18 @@
             @endif
 
             <div class="mt-3 text-xs text-blue-600">
+                @if($rw->getCurrentJobStatus->status === 'completed')
+                Completed: {{ $rw->getCurrentJobStatus->completed_at->format('M d, Y H:i:s') }}
+                @else
                 Started: {{ $rw->getCurrentJobStatus->started_at->format('M d, Y H:i:s') }}
+                <span class="ml-2 inline-flex items-center">
+                    <svg class="w-3 h-3 mr-1 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                    </svg>
+                    Processing...
+                </span>
+                @endif
             </div>
         </div>
 
@@ -699,137 +721,135 @@
                                 <path fill-rule="evenodd"
                                     d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zm-4 4a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"
                                     clip-rule="evenodd" />
-                            </svg>
-                            <div class="text-sm text-orange-800">
-                                <p class="font-medium">Anggota-anggota ini belum memiliki NIK yang valid</p>
-                                <p class="mt-1">NIK diperlukan untuk identifikasi resmi. Klik "Lengkapi NIK"
-                                    untuk
-                                    menambahkan atau memperbaiki data NIK.</p>
-                            </div>
+                        </div>
+                        <div class="text-sm text-orange-800">
+                            <p class="font-medium">Anggota-anggota ini belum memiliki NIK yang valid</p>
+                            <p class="mt-1">NIK diperlukan untuk identifikasi resmi. Klik "Lengkapi NIK"
+                                untuk
+                                menambahkan atau memperbaiki data NIK.</p>
                         </div>
                     </div>
                 </div>
             </div>
-            @endif
+        </div>
+        @endif
 
-            <!-- Failed Files Tab -->
-            @if($failedFiles->count() > 0)
-            <div id="content-failed-files" class="tab-pane hidden">
-                <div class="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
-                    <div>
-                        <h3 class="text-lg font-medium text-gray-900">Files Requiring Manual Processing</h3>
-                        <p class="text-sm text-gray-600">Files that failed processing or contain non-KK data
-                        </p>
-                    </div>
-                    <span
-                        class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
-                        {{ $failedFiles->count() }} files
-                    </span>
+        <!-- Failed Files Tab -->
+        @if($failedFiles->count() > 0)
+        <div id="content-failed-files" class="tab-pane hidden">
+            <div class="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
+                <div>
+                    <h3 class="text-lg font-medium text-gray-900">Files Requiring Manual Processing</h3>
+                    <p class="text-sm text-gray-600">Files that failed processing or contain non-KK data
+                    </p>
                 </div>
-                <div class="overflow-hidden">
-                    <div class="overflow-x-auto">
-                        <table class="min-w-full divide-y divide-gray-200">
-                            <thead class="bg-gray-50">
-                                <tr>
-                                    <th
-                                        class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                        Filename
-                                    </th>
-                                    <th
-                                        class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                        Reason
-                                    </th>
-                                    <th
-                                        class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                        Date
-                                    </th>
-                                    <th
-                                        class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                        Actions
-                                    </th>
-                                </tr>
-                            </thead>
-                            <tbody class="bg-white divide-y divide-gray-200">
-                                @foreach($failedFiles as $file)
-                                <tr class="hover:bg-gray-50">
-                                    <td class="px-6 py-4 whitespace-nowrap">
-                                        <div class="text-sm font-medium text-gray-900">{{ $file->original_filename }}
-                                        </div>
-                                        @if($file->error_message)
-                                        <div class="text-sm text-gray-500 truncate max-w-xs">{{
-                                            $file->error_message }}</div>
-                                        @endif
-                                    </td>
-                                    <td class="px-6 py-4 whitespace-nowrap">
-                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
+                <span
+                    class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                    {{ $failedFiles->count() }} files
+                </span>
+            </div>
+            <div class="overflow-hidden">
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th
+                                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Filename
+                                </th>
+                                <th
+                                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Reason
+                                </th>
+                                <th
+                                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Date
+                                </th>
+                                <th
+                                    class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Actions
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody class="bg-white divide-y divide-gray-200">
+                            @foreach($failedFiles as $file)
+                            <tr class="hover:bg-gray-50">
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <div class="text-sm font-medium text-gray-900">{{ $file->original_filename }}
+                                    </div>
+                                    @if($file->error_message)
+                                    <div class="text-sm text-gray-500 truncate max-w-xs">{{
+                                        $file->error_message }}</div>
+                                    @endif
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
                                             @if($file->failure_reason === 'not_kk') bg-yellow-100 text-yellow-800
                                             @elseif($file->failure_reason === 'processing_error') bg-red-100 text-red-800
                                             @else bg-orange-100 text-orange-800 @endif">
-                                            {{ $file->failure_reason_text }}
-                                        </span>
-                                    </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                        {{ $file->created_at->format('M d, Y H:i') }}
-                                    </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
-                                        <a href="{{ route('failed-files.show', [$rw->getDesa->id, $rw->id, $file->id]) }}"
-                                            class="inline-flex items-center px-2.5 py-1.5 border border-gray-300 shadow-sm text-xs font-medium rounded text-gray-700 bg-white hover:bg-gray-50">
+                                        {{ $file->failure_reason_text }}
+                                    </span>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                    {{ $file->created_at->format('M d, Y H:i') }}
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
+                                    <a href="{{ route('failed-files.show', [$rw->getDesa->id, $rw->id, $file->id]) }}"
+                                        class="inline-flex items-center px-2.5 py-1.5 border border-gray-300 shadow-sm text-xs font-medium rounded text-gray-700 bg-white hover:bg-gray-50">
+                                        <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                        </svg>
+                                        View
+                                    </a>
+                                    <form
+                                        action="{{ route('failed-files.mark-processed', [$rw->getDesa->id, $rw->id, $file->id]) }}"
+                                        method="POST" class="inline">
+                                        @csrf
+                                        @method('PATCH')
+                                        <button type="submit"
+                                            class="inline-flex items-center px-2.5 py-1.5 border border-green-300 shadow-sm text-xs font-medium rounded text-green-700 bg-green-50 hover:bg-green-100"
+                                            onclick="return confirm('Mark this file as manually processed?')">
                                             <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor"
                                                 viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                    d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                    d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                                    d="M5 13l4 4L19 7" />
                                             </svg>
-                                            View
-                                        </a>
-                                        <form
-                                            action="{{ route('failed-files.mark-processed', [$rw->getDesa->id, $rw->id, $file->id]) }}"
-                                            method="POST" class="inline">
-                                            @csrf
-                                            @method('PATCH')
-                                            <button type="submit"
-                                                class="inline-flex items-center px-2.5 py-1.5 border border-green-300 shadow-sm text-xs font-medium rounded text-green-700 bg-green-50 hover:bg-green-100"
-                                                onclick="return confirm('Mark this file as manually processed?')">
-                                                <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor"
-                                                    viewBox="0 0 24 24">
-                                                    <path stroke-linecap="round" stroke-linejoin="round"
-                                                        stroke-width="2" d="M5 13l4 4L19 7" />
-                                                </svg>
-                                                Mark Done
-                                            </button>
-                                        </form>
-                                        <form
-                                            action="{{ route('failed-files.destroy', [$rw->getDesa->id, $rw->id, $file->id]) }}"
-                                            method="POST" class="inline">
-                                            @csrf
-                                            @method('DELETE')
-                                            <button type="submit"
-                                                class="inline-flex items-center px-2.5 py-1.5 border border-red-300 shadow-sm text-xs font-medium rounded text-red-700 bg-red-50 hover:bg-red-100"
-                                                onclick="return confirm('Are you sure you want to delete this file record?')">
-                                                <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor"
-                                                    viewBox="0 0 24 24">
-                                                    <path stroke-linecap="round" stroke-linejoin="round"
-                                                        stroke-width="2"
-                                                        d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                                </svg>
-                                                Delete
-                                            </button>
-                                        </form>
-                                    </td>
-                                </tr>
-                                @endforeach
-                            </tbody>
-                        </table>
-                    </div>
+                                            Mark Done
+                                        </button>
+                                    </form>
+                                    <form
+                                        action="{{ route('failed-files.destroy', [$rw->getDesa->id, $rw->id, $file->id]) }}"
+                                        method="POST" class="inline">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="submit"
+                                            class="inline-flex items-center px-2.5 py-1.5 border border-red-300 shadow-sm text-xs font-medium rounded text-red-700 bg-red-50 hover:bg-red-100"
+                                            onclick="return confirm('Are you sure you want to delete this file record?')">
+                                            <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor"
+                                                viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                    d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                            </svg>
+                                            Delete
+                                        </button>
+                                    </form>
+                                </td>
+                            </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
                 </div>
             </div>
-            @endif
+        </div>
+        @endif
 
 
-            <!-- Tab Switching JavaScript -->
-            <script>
-                function switchTab(tabName) {
+        <!-- Tab Switching JavaScript -->
+        <script>
+            function switchTab(tabName) {
         // Hide all tab panes
         document.querySelectorAll('.tab-pane').forEach(pane => {
             pane.classList.add('hidden');
@@ -921,37 +941,37 @@
         .catch(console.error);
     }, 3000); // Refresh every 3 seconds
     @endif
-            </script>
+        </script>
 
-            <!-- Custom CSS for Tabs -->
-            <style>
-                .tab-pane {
-                    min-height: 400px;
-                }
+        <!-- Custom CSS for Tabs -->
+        <style>
+            .tab-pane {
+                min-height: 400px;
+            }
 
-                .tab-button {
-                    transition: all 0.2s ease-in-out;
-                    cursor: pointer;
-                }
+            .tab-button {
+                transition: all 0.2s ease-in-out;
+                cursor: pointer;
+            }
 
-                .tab-button:hover {
-                    opacity: 0.8;
-                }
+            .tab-button:hover {
+                opacity: 0.8;
+            }
 
-                .tab-content {
-                    background: white;
-                }
+            .tab-content {
+                background: white;
+            }
 
-                /* Ensure proper display of active tab */
-                .tab-pane.active {
-                    display: block !important;
-                }
+            /* Ensure proper display of active tab */
+            .tab-pane.active {
+                display: block !important;
+            }
 
-                .tab-pane.hidden {
-                    display: none !important;
-                }
-            </style>
-            </>
-        </div>
+            .tab-pane.hidden {
+                display: none !important;
+            }
+        </style>
+        </>
     </div>
-    @endsection
+</div>
+@endsection
