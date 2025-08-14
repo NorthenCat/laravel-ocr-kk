@@ -63,7 +63,7 @@ class RWController extends Controller
         $totalRT = Anggota::whereHas('getKk', function ($query) use ($rw_id) {
             $query->where('rw_id', $rw_id);
         })
-            ->pluck('RT')
+            ->pluck('rt')
             ->map(function ($rt) {
                 return (int) $rt;
             })
