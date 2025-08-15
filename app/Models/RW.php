@@ -9,6 +9,7 @@ class RW extends Model
     protected $table = 'rw';
 
     protected $fillable = [
+        'id',
         'uuid',
         'nama_rw',
         'desa_id',

@@ -15,22 +15,39 @@ class DesaController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
-        $desas = Desa::with([
-            'getRw.getKK.getWarga',
-            'getRw' => function ($query) {
-                $query->orderBy('nama_rw', 'asc');
-            },
-            'getUsers' => function ($query) {
-                $query->orderBy('name', 'asc');
+        try {
+            $userId = $request->input('user_id');
+            if (!$userId) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'User ID is required'
+                ], 400);
             }
-        ])->withCount(['getRw', 'getKK'])->get();
 
-        return response()->json([
-            'success' => true,
-            'data' => $desas
-        ]);
+            // Get desas that the specified user has access to
+            $desas = Desa::getDesaByAccess($userId)->with([
+                'getRw.getKK.getWarga',
+                'getRw' => function ($query) {
+                    $query->orderBy('nama_rw', 'asc');
+                },
+                'getUsers' => function ($query) {
+                    $query->orderBy('name', 'asc');
+                }
+            ])->withCount(['getRw', 'getKK'])->get();
+
+            return response()->json([
+                'success' => true,
+                'data' => $desas
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to fetch desas',
+                'error' => $e->getMessage()
+            ], 500);
+        }
     }
 
     /**
@@ -41,6 +58,7 @@ class DesaController extends Controller
         $validator = Validator::make($request->all(), [
             'nama_desa' => 'required|string|max:255',
             'google_drive' => 'nullable|url|max:500',
+            'user_id' => 'required|integer|exists:users,id',
         ]);
 
         if ($validator->fails()) {
@@ -60,7 +78,7 @@ class DesaController extends Controller
 
             DesaUser::create([
                 'desa_id' => $desa->id,
-                'user_id' => auth()->id(),
+                'user_id' => $request->user_id,
             ]);
 
             return response()->json([
@@ -80,11 +98,20 @@ class DesaController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(string $id)
+    public function show(Request $request, string $id)
     {
         try {
+            $userId = $request->input('user_id');
+            if (!$userId) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'User ID is required'
+                ], 400);
+            }
+
             $desa = Desa::with([
-                'getRw.getKK.getWarga',
+                'getRw.getKK',
+                'getRw.getWarga',
                 'getRw' => function ($query) {
                     $query->orderBy('nama_rw', 'asc');
                 },
@@ -92,6 +119,23 @@ class DesaController extends Controller
                     $query->orderBy('name', 'asc');
                 }
             ])->withCount(['getRw', 'getKK'])->findOrFail($id);
+
+            $checkAccess = $desa->hasAccess($userId);
+
+            if (!$checkAccess) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Access denied to this desa'
+                ], 403);
+            }
+
+            // Check if user has access to this desa
+            if (!$desa->hasAccess($userId)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Access denied to this desa'
+                ], 403);
+            }
 
             return response()->json([
                 'success' => true,
@@ -113,6 +157,7 @@ class DesaController extends Controller
         $validator = Validator::make($request->all(), [
             'nama_desa' => 'required|string|max:255',
             'google_drive' => 'nullable|url|max:500',
+            'user_id' => 'required|integer|exists:users,id',
         ]);
 
         if ($validator->fails()) {
@@ -125,6 +170,15 @@ class DesaController extends Controller
 
         try {
             $desa = Desa::findOrFail($id);
+
+            // Check if user has access to this desa
+            if (!$desa->hasAccess($request->user_id)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Access denied to this desa'
+                ], 403);
+            }
+
             $desa->update([
                 'nama_desa' => $request->nama_desa,
                 'google_drive' => $request->google_drive,
@@ -147,10 +201,27 @@ class DesaController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(string $id)
+    public function destroy(Request $request, string $id)
     {
+        $userId = $request->input('user_id');
+        if (!$userId) {
+            return response()->json([
+                'success' => false,
+                'message' => 'User ID is required'
+            ], 400);
+        }
+
         try {
             $desa = Desa::findOrFail($id);
+
+            // Check if user has access to this desa
+            if (!$desa->hasAccess($userId)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Access denied to this desa'
+                ], 403);
+            }
+
             $desa->delete();
 
             return response()->json([
@@ -173,6 +244,7 @@ class DesaController extends Controller
     {
         $validator = Validator::make($request->all(), [
             'user_email' => 'required|email',
+            'user_id' => 'required|integer|exists:users,id',
         ]);
 
         if ($validator->fails()) {
@@ -185,6 +257,14 @@ class DesaController extends Controller
 
         try {
             $desa = Desa::findOrFail($id);
+
+            // Check if requesting user has access to this desa
+            if (!$desa->hasAccess($request->user_id)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Access denied to this desa'
+                ], 403);
+            }
 
             // Check if user exists
             $user = User::where('email', $request->user_email)->first();
@@ -216,7 +296,7 @@ class DesaController extends Controller
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to add user',
+                'message' => 'Failed to add user' . $e->getMessage(),
                 'error' => $e->getMessage()
             ], 500);
         }
@@ -227,11 +307,27 @@ class DesaController extends Controller
      */
     public function removeUser(Request $request, $id, $userId)
     {
+        $requestingUserId = $request->input('user_id');
+        if (!$requestingUserId) {
+            return response()->json([
+                'success' => false,
+                'message' => 'user ID is required'
+            ], 400);
+        }
+
         try {
             $desa = Desa::findOrFail($id);
 
-            // Prevent removing the current user
-            if ($userId == auth()->id()) {
+            // Check if requesting user has access to this desa
+            if (!$desa->hasAccess($requestingUserId)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Access denied to this desa'
+                ], 403);
+            }
+
+            // Prevent removing the requesting user themselves
+            if ($userId == $requestingUserId) {
                 return response()->json([
                     'success' => false,
                     'message' => 'You cannot remove yourself from the village'

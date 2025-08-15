@@ -54,6 +54,20 @@ return [
 
     'url' => env('APP_URL', 'http://localhost'),
 
+
+    /*
+    |--------------------------------------------------------------------------
+    | Application API URL
+    |--------------------------------------------------------------------------
+    |
+    | This URL is used for API endpoints and should point to your API base URL.
+    | This is typically used when your API is hosted on a different domain
+    | or subdomain from your main application.
+    |
+    */
+
+    'api_url' => env('APP_API_URL', 'http://localhost/api'),
+
     /*
     |--------------------------------------------------------------------------
     | Application Timezone

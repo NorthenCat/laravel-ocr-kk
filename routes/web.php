@@ -11,10 +11,12 @@ Route::middleware(['guest'])->group(function () {
 
     Route::get('/register', [RegisterController::class, 'showRegistrationForm'])->name('register');
     Route::post('/register', [RegisterController::class, 'register']);
-
 });
 
-Route::middleware(['auth', 'role:admin|super-admin'])->group(function () {
+// Logout route (available for authenticated users)
+Route::post('/logout', [LoginController::class, 'logout'])->name('logout')->middleware('auth');
+
+Route::middleware(['auth', 'role:admin|super-admin', 'api.auth'])->group(function () {
     // Dashboard Route
     Route::get('/dashboard', [\App\Http\Controllers\DasboardController::class, 'index'])->name('dashboard');
 

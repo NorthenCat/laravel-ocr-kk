@@ -119,6 +119,11 @@ class KKController extends Controller
                 return back()->withErrors(['kk_images' => 'N8N webhook URL is not configured. Please contact administrator.']);
             }
 
+            // Get user session data for API calls
+            $apiUser = session('api_user');
+            $apiToken = session('api_token');
+            $userId = $apiUser['id'] ?? null;
+
             $uploadedFiles = $request->file('kk_images');
 
             if (empty($uploadedFiles)) {
@@ -167,7 +172,7 @@ class KKController extends Controller
                     'raw' => null // Will be populated after OCR
                 ];
 
-                $jobs[] = new \App\Jobs\ProcessKKDataJob($jobData, $desa_id, $rw_id);
+                $jobs[] = new \App\Jobs\ProcessKKDataJob($jobData, $desa_id, $rw_id, $userId, $apiToken);
             }
 
             if (empty($jobs)) {

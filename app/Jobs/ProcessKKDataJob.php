@@ -28,12 +28,16 @@ class ProcessKKDataJob implements ShouldQueue
     protected $kkData;
     protected $rwId;
     protected $desaId;
+    protected $userId;
+    protected $apiToken;
 
-    public function __construct($kkData, $desaId, $rwId)
+    public function __construct($kkData, $desaId, $rwId, $userId = null, $apiToken = null)
     {
         $this->kkData = $kkData;
-        $this->rwId = $rwId;
         $this->desaId = $desaId;
+        $this->rwId = $rwId;
+        $this->userId = $userId;
+        $this->apiToken = $apiToken;
     }
 
     public function handle()
@@ -176,7 +180,7 @@ class ProcessKKDataJob implements ShouldQueue
 
         // Validate response structure
         if (!isset($data['isKK']) || $data['isKK'] !== true) {
-            // Save as failed file for manual processing
+            // Save as failed file for manual processing (locally)
             FailedKkFile::create([
                 'rw_id' => $this->rwId,
                 'batch_id' => $this->batch()->id,
@@ -199,7 +203,7 @@ class ProcessKKDataJob implements ShouldQueue
 
         // Check for AnggotaKeluarga
         if (!isset($data['AnggotaKeluarga']) || empty($data['AnggotaKeluarga'])) {
-            // Save as failed file for manual processing
+            // Save as failed file for manual processing (locally)
             FailedKkFile::create([
                 'rw_id' => $this->rwId,
                 'batch_id' => $this->batch()->id,
@@ -220,6 +224,91 @@ class ProcessKKDataJob implements ShouldQueue
             return;
         }
 
+        // Send processed data to API server instead of saving locally
+        $this->sendToApiServer($data);
+    }
+
+    private function sendToApiServer(array $data)
+    {
+        try {
+            // Get API settings
+            $setting = Setting::first();
+            $apiUrl = config('app.api_url');
+            if (!$apiUrl) {
+                $apiUrl = config('app.url', 'http://127.0.0.1:8000') . '/api';
+            }
+
+            // Use the API token passed to the job
+            $apiToken = $this->apiToken;
+            $userId = $this->userId;
+
+            if (!$apiToken) {
+                throw new \Exception('API token not available for background job');
+            }
+
+            if (!$userId) {
+                throw new \Exception('User ID not available for background job');
+            }
+
+            // Prepare the data to send to API
+            $apiData = [
+                'rw_id' => $this->rwId,
+                'desa_id' => $this->desaId,
+                'filename' => $this->kkData['filename'],
+                'original_filename' => $this->kkData['original_filename'] ?? null,
+                'batch_id' => $this->batch()->id,
+                'n8n_response' => $data,
+                'processed_at' => now()->toISOString(),
+                'user_id' => $userId
+            ];
+
+            Log::info('Sending processed KK data to API server', [
+                'filename' => $this->kkData['filename'],
+                'rw_id' => $this->rwId,
+                'desa_id' => $this->desaId,
+                'batch_id' => $this->batch()->id,
+                'api_url' => $apiUrl,
+                'user_id' => $userId
+            ]);
+
+            // Send to API server
+            $response = Http::timeout(30)
+                ->withToken($apiToken)
+                ->post($apiUrl . '/desa/' . $this->desaId . '/rw/' . $this->rwId . '/kk/process-ocr', $apiData);
+
+            if (!$response->successful()) {
+                throw new \Exception('API server request failed with status: ' . $response->status() . ' - ' . $response->body());
+            }
+
+            $responseData = $response->json();
+
+            if (!$responseData['success']) {
+                throw new \Exception('API server returned error: ' . ($responseData['message'] ?? 'Unknown error'));
+            }
+
+            Log::info('Successfully sent processed KK data to API server', [
+                'filename' => $this->kkData['filename'],
+                'rw_id' => $this->rwId,
+                'desa_id' => $this->desaId,
+                'batch_id' => $this->batch()->id,
+                'api_response' => $responseData
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Failed to send processed data to API server, falling back to local storage', [
+                'filename' => $this->kkData['filename'],
+                'error' => $e->getMessage(),
+                'rw_id' => $this->rwId,
+                'batch_id' => $this->batch()->id
+            ]);
+
+            // Fallback to local processing if API fails
+            $this->processN8NResponseLocally($data);
+        }
+    }
+
+    private function processN8NResponseLocally(array $data)
+    {
         // Validate RW exists
         $rw = RW::where('id', $this->rwId)
             ->where('desa_id', $this->desaId)

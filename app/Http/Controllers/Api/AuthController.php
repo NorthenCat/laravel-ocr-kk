@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\ValidationException;
+use Log;
 
 class AuthController extends Controller
 {
@@ -17,6 +18,10 @@ class AuthController extends Controller
      */
     public function login(Request $request)
     {
+        Log::info('Login attempt', [
+            'email' => $request->email,
+            'ip' => $request->ip(),
+        ]);
         $validator = Validator::make($request->all(), [
             'email' => 'required|email',
             'password' => 'required',

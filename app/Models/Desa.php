@@ -54,10 +54,16 @@ class Desa extends Model
         return $this->getUsers()->where('user_id', $userId)->exists();
     }
 
-    public static function getDesaByAccess()
+    public function isOwner($userId)
     {
-        return self::whereHas('getUsers', function ($query) {
-            $query->where('user_id', auth()->id());
+        return $this->created_by === $userId;
+    }
+
+    public static function getDesaByAccess($userId = null)
+    {
+        $userId = $userId ?? auth()->id();
+        return self::whereHas('getUsers', function ($query) use ($userId) {
+            $query->where('user_id', $userId);
         });
     }
 

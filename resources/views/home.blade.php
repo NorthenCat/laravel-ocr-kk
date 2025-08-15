@@ -47,33 +47,34 @@
         </div>
 
         <div class="p-6">
-            @if($desas->count() > 0)
+            @if(count($desas) > 0)
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 @foreach($desas as $desa)
                 <div
                     class="bg-white border border-gray-200 rounded-lg shadow-sm hover:shadow-md transition-shadow duration-200">
                     <div class="p-6">
                         <div class="flex items-center justify-between mb-4">
-                            <h3 class="text-lg font-semibold text-gray-900">{{ $desa->nama_desa }}</h3>
+                            <h3 class="text-lg font-semibold text-gray-900">{{ $desa['nama_desa'] ?? 'Unknown Village'
+                                }}</h3>
                         </div>
 
                         <div class="flex justify-between items-center text-sm text-gray-500 mb-4">
                             <span>
                                 <i class="fas fa-building mr-1"></i>
-                                {{ $desa->getRw()->count() }} RW
+                                {{ $desa['get_rw_count'] ?? 0 }} RW
                             </span>
                             <span>
                                 <i class="fas fa-users mr-1"></i>
-                                {{ $desa->getKK()->count() }} KK
+                                {{ $desa['get_k_k_count'] ?? 0 }} KK
                             </span>
                         </div>
 
                         <div class="flex space-x-2">
-                            <a href="{{ route('desa.show', $desa) }}"
+                            <a href="{{ route('desa.show', $desa['id']) }}"
                                 class="flex-1 bg-blue-600 hover:bg-blue-700 text-white text-center py-2 px-4 rounded-md text-sm font-medium">
                                 Lihat Detail
                             </a>
-                            <a href="{{ route('desa.edit', $desa) }}"
+                            <a href="{{ route('desa.edit', $desa['id']) }}"
                                 class="bg-gray-100 hover:bg-gray-200 text-gray-800 py-2 px-4 rounded-md text-sm font-medium">
                                 <i class="fas fa-edit"></i>
                             </a>
