@@ -136,4 +136,80 @@ class AuthController extends Controller
             ]
         ]);
     }
+
+    /**
+     * Get user by email (for remember-me token generation)
+     */
+    public function getUserByEmail(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'email' => 'required|email',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation error',
+                'errors' => $validator->errors()
+            ], 422);
+        }
+
+        $user = User::where('email', $request->email)->first();
+
+        if (!$user) {
+            return response()->json([
+                'success' => false,
+                'message' => 'User not found'
+            ], 404);
+        }
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'user' => $user
+            ]
+        ]);
+    }
+
+    /**
+     * Generate token for existing user (for remember-me functionality)
+     */
+    public function generateToken(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'email' => 'required|email',
+            'user_id' => 'required|integer',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation error',
+                'errors' => $validator->errors()
+            ], 422);
+        }
+
+        $user = User::where('email', $request->email)
+            ->where('id', $request->user_id)
+            ->first();
+
+        if (!$user) {
+            return response()->json([
+                'success' => false,
+                'message' => 'User not found or mismatch'
+            ], 404);
+        }
+
+        // Generate new token for the user
+        $token = $user->createToken('remember-me-token')->plainTextToken;
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Token generated successfully',
+            'data' => [
+                'token' => $token,
+                'token_type' => 'Bearer'
+            ]
+        ]);
+    }
 }

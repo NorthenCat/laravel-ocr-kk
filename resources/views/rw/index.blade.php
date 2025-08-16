@@ -499,7 +499,8 @@
                             <div class="space-y-2 text-sm text-gray-600">
 
                                 <p><span class="font-medium">No. KK:</span> {{ $kk->no_kk }}</p>
-                                <p><span class="font-medium">Filename:</span> {{ $kk->getWarga[0]->img_name }}</p>
+                                <p><span class="font-medium">Filename:</span> {{ $kk->getWarga[0]->img_name ?? 'INPUT
+                                    MANUAL' }}</p>
                                 <p><span class="font-medium">Anggota:</span> {{ $kk->getWarga->count() }} orang</p>
                             </div>
 

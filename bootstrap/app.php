@@ -22,6 +22,10 @@ return Application::configure(basePath: dirname(__DIR__))
             \Laravel\Sanctum\Http\Middleware\EnsureFrontendRequestsAreStateful::class,
         ]);
 
+        $middleware->web(append: [
+            \App\Http\Middleware\EnsureUserHasApiToken::class,
+        ]);
+
     })
     ->withExceptions(function (Exceptions $exceptions) {
         //
