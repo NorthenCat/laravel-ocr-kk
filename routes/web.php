@@ -16,7 +16,7 @@ Route::middleware(['guest'])->group(function () {
 // Logout route (available for authenticated users)
 Route::post('/logout', [LoginController::class, 'logout'])->name('logout')->middleware('auth');
 
-Route::middleware(['auth', 'role:admin|super-admin', 'api.auth'])->group(function () {
+Route::middleware(['auth', 'api.auth'])->group(function () {
     // Dashboard Route
     Route::get('/dashboard', [\App\Http\Controllers\DasboardController::class, 'index'])->name('dashboard');
 
