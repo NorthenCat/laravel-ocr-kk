@@ -48,8 +48,6 @@ class ProcessKKDataJob implements ShouldQueue
         }
 
         try {
-            // Update job status - increment processed jobs
-            $this->updateJobProgress();
 
             // Get webhook URL from settings
             $setting = Setting::first();
@@ -66,13 +64,6 @@ class ProcessKKDataJob implements ShouldQueue
 
             // Get the full system path to the file
             $fullFilePath = Storage::disk('local')->path($filePath);
-
-            Log::info('Sending KK image to N8N for OCR', [
-                'filename' => $this->kkData['filename'],
-                'rw_id' => $this->rwId,
-                'batch_id' => $this->batch()->id,
-                'file_path' => $filePath
-            ]);
 
             // Send to N8N as multipart form data with the actual file
             $response = Http::timeout(300)
@@ -91,26 +82,11 @@ class ProcessKKDataJob implements ShouldQueue
 
             $responseData = $response->json();
 
-            Log::info('Received OCR response from N8N', [
-                'filename' => $this->kkData['filename'],
-                'response_status' => $response->status(),
-                'batch_id' => $this->batch()->id,
-                'has_response_data' => !empty($responseData)
-            ]);
-
             // Delete the image file after successful processing)
             Storage::disk('local')->delete($filePath);
 
             // Process the N8N response
             $this->processN8NResponse($responseData);
-
-
-
-            Log::info('KK image processed successfully and file deleted', [
-                'filename' => $this->kkData['filename'],
-                'rw_id' => $this->rwId,
-                'batch_id' => $this->batch()->id
-            ]);
 
         } catch (\Exception $e) {
             // Update job status - increment failed jobs
@@ -170,14 +146,6 @@ class ProcessKKDataJob implements ShouldQueue
         // Handle array response - get first item
         $data = is_array($responseData) && isset($responseData[0]) ? $responseData[0] : $responseData;
 
-        Log::info('Processing N8N OCR response data', [
-            'filename' => $this->kkData['filename'],
-            'isKK' => $data['isKK'] ?? 'not_set',
-            'has_anggota' => isset($data['AnggotaKeluarga']),
-            'anggota_count' => isset($data['AnggotaKeluarga']) ? count($data['AnggotaKeluarga']) : 0,
-            'batch_id' => $this->batch()->id
-        ]);
-
         // Validate response structure
         if (!isset($data['isKK']) || $data['isKK'] !== true) {
             // Save as failed file for manual processing (locally)
@@ -191,12 +159,6 @@ class ProcessKKDataJob implements ShouldQueue
                 'failure_reason' => 'not_kk',
                 'error_message' => 'N8N response indicates this is not KK data',
                 'n8n_response' => $data,
-            ]);
-
-            Log::info('N8N response indicates not KK data, saved for manual processing', [
-                'filename' => $this->kkData['filename'],
-                'isKK' => $data['isKK'] ?? null,
-                'batch_id' => $this->batch()->id
             ]);
             return;
         }
@@ -214,12 +176,6 @@ class ProcessKKDataJob implements ShouldQueue
                 'failure_reason' => 'no_anggota_data',
                 'error_message' => 'No AnggotaKeluarga data found in N8N response',
                 'n8n_response' => $data,
-            ]);
-
-            Log::warning('No AnggotaKeluarga data in N8N response, saved for manual processing', [
-                'filename' => $this->kkData['filename'],
-                'batch_id' => $this->batch()->id,
-                'available_keys' => array_keys($data)
             ]);
             return;
         }
@@ -251,10 +207,17 @@ class ProcessKKDataJob implements ShouldQueue
             }
 
             // Prepare the data to send to API
+            //Get RW data from API
+            $rwLocal = RW::find($this->rwId);
+            $response = Http::withToken($apiToken)
+                ->get($apiUrl . '/rw/' . $rwLocal->uuid);
+            $response = $response->json();
+            $rw = $response['data'];
+
             $apiData = [
-                'rw_id' => $this->rwId,
+                'rw_id' => $rw['id'],
                 'desa_id' => $this->desaId,
-                'filename' => $this->kkData['filename'],
+                'filename' => $this->kkData['original_filename'],
                 'original_filename' => $this->kkData['original_filename'] ?? null,
                 'batch_id' => $this->batch()->id,
                 'n8n_response' => $data,
@@ -262,19 +225,10 @@ class ProcessKKDataJob implements ShouldQueue
                 'user_id' => $userId
             ];
 
-            Log::info('Sending processed KK data to API server', [
-                'filename' => $this->kkData['filename'],
-                'rw_id' => $this->rwId,
-                'desa_id' => $this->desaId,
-                'batch_id' => $this->batch()->id,
-                'api_url' => $apiUrl,
-                'user_id' => $userId
-            ]);
-
             // Send to API server
             $response = Http::timeout(30)
                 ->withToken($apiToken)
-                ->post($apiUrl . '/desa/' . $this->desaId . '/rw/' . $this->rwId . '/kk/process-ocr', $apiData);
+                ->post($apiUrl . '/desa/' . $this->desaId . '/rw/' . $rw['id'] . '/kk/process-ocr', $apiData);
 
             if (!$response->successful()) {
                 throw new \Exception('API server request failed with status: ' . $response->status() . ' - ' . $response->body());
@@ -286,13 +240,8 @@ class ProcessKKDataJob implements ShouldQueue
                 throw new \Exception('API server returned error: ' . ($responseData['message'] ?? 'Unknown error'));
             }
 
-            Log::info('Successfully sent processed KK data to API server', [
-                'filename' => $this->kkData['filename'],
-                'rw_id' => $this->rwId,
-                'desa_id' => $this->desaId,
-                'batch_id' => $this->batch()->id,
-                'api_response' => $responseData
-            ]);
+            // Update job status - increment processed jobs
+            $this->updateJobProgress();
 
         } catch (\Exception $e) {
             Log::error('Failed to send processed data to API server, falling back to local storage', [

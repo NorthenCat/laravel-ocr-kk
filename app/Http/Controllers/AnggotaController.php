@@ -6,10 +6,31 @@ use App\Models\Anggota;
 use App\Models\KK;
 use App\Models\RW;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Http;
 use Carbon\Carbon;
 
 class AnggotaController extends Controller
 {
+    private function getApiUrl()
+    {
+        $apiUrl = config('app.api_url');
+        if (!$apiUrl) {
+            $apiUrl = config('app.url', 'http://127.0.0.1:8000') . '/api';
+        }
+        return $apiUrl;
+    }
+
+    private function getApiToken()
+    {
+        return session('api_token');
+    }
+
+    private function getUserId()
+    {
+        $apiUser = session('api_user');
+        return $apiUser['id'] ?? null;
+    }
+
     /**
      * Display a listing of the resource.
      */
@@ -23,6 +44,38 @@ class AnggotaController extends Controller
      */
     public function create($desa_id, $rw_id, $kk_id)
     {
+        $token = $this->getApiToken();
+        $userId = $this->getUserId();
+
+        if ($token && $userId) {
+            try {
+                $response = Http::withToken($token)
+                    ->timeout(30)
+                    ->get($this->getApiUrl() . "/desa/{$desa_id}/rw/{$rw_id}/kk/{$kk_id}", [
+                        'user_id' => $userId
+                    ]);
+
+                if ($response->successful()) {
+                    $apiData = $response->json();
+                    if ($apiData['success']) {
+                        // Convert API response to object for view compatibility
+                        $kk = (object) $apiData['data'];
+                        if (isset($kk->get_rw)) {
+                            $kk->getRw = (object) $kk->get_rw;
+                            if (isset($kk->get_rw['get_desa'])) {
+                                $kk->getRw->getDesa = (object) $kk->get_rw['get_desa'];
+                            }
+                        }
+
+                        return view('anggota.form', compact('kk'));
+                    }
+                }
+            } catch (\Exception $e) {
+                // API failed, fall back to local data
+            }
+        }
+
+        // Fallback to local data
         $kk = KK::with('getRw.getDesa')->where('rw_id', $rw_id)->findOrFail($kk_id);
         return view('anggota.form', compact('kk'));
     }
@@ -60,6 +113,41 @@ class AnggotaController extends Controller
             'kk_disahkan_tanggal' => 'nullable|date',
         ]);
 
+        $token = $this->getApiToken();
+        $userId = $this->getUserId();
+
+        if ($token && $userId) {
+            try {
+                $requestData = $request->all();
+                $requestData['user_id'] = $userId;
+
+                $response = Http::withToken($token)
+                    ->timeout(30)
+                    ->post($this->getApiUrl() . "/desa/{$desa_id}/rw/{$rw_id}/kk/{$kk_id}/anggota", $requestData);
+
+                if ($response->successful()) {
+                    $apiData = $response->json();
+                    if ($apiData['success']) {
+                        return redirect()->route('kk.index', [$desa_id, $rw_id, $kk_id])
+                            ->with('success', 'Anggota keluarga berhasil ditambahkan.');
+                    } else {
+                        return redirect()->back()
+                            ->withInput()
+                            ->with('error', 'API Error: ' . ($apiData['message'] ?? 'Unknown error'));
+                    }
+                } else {
+                    return redirect()->back()
+                        ->withInput()
+                        ->with('error', 'API request failed with status: ' . $response->status());
+                }
+            } catch (\Exception $e) {
+                return redirect()->back()
+                    ->withInput()
+                    ->with('error', 'Connection error: ' . $e->getMessage());
+            }
+        }
+
+        // Fallback to local operation
         $kk = KK::where('rw_id', $rw_id)->findOrFail($kk_id);
 
         Anggota::create([
@@ -108,6 +196,41 @@ class AnggotaController extends Controller
      */
     public function edit($desa_id, $rw_id, $kk_id, $anggota_id)
     {
+        $token = $this->getApiToken();
+        $userId = $this->getUserId();
+
+        if ($token && $userId) {
+            try {
+                $response = Http::withToken($token)
+                    ->timeout(30)
+                    ->get($this->getApiUrl() . "/desa/{$desa_id}/rw/{$rw_id}/kk/{$kk_id}/anggota/{$anggota_id}", [
+                        'user_id' => $userId
+                    ]);
+
+                if ($response->successful()) {
+                    $apiData = $response->json();
+                    if ($apiData['success']) {
+                        // Convert API response to object for view compatibility
+                        $anggota = (object) $apiData['data'];
+                        if (isset($anggota->get_kk)) {
+                            $anggota->getKk = (object) $anggota->get_kk;
+                            if (isset($anggota->get_kk['get_rw'])) {
+                                $anggota->getKk->getRw = (object) $anggota->get_kk['get_rw'];
+                                if (isset($anggota->get_kk['get_rw']['get_desa'])) {
+                                    $anggota->getKk->getRw->getDesa = (object) $anggota->get_kk['get_rw']['get_desa'];
+                                }
+                            }
+                        }
+
+                        return view('anggota.form', compact('anggota'));
+                    }
+                }
+            } catch (\Exception $e) {
+                // API failed, fall back to local data
+            }
+        }
+
+        // Fallback to local data
         $anggota = Anggota::with('getKk.getRw.getDesa')
             ->whereHas('getKk', function ($query) use ($rw_id) {
                 $query->where('rw_id', $rw_id);
@@ -122,15 +245,9 @@ class AnggotaController extends Controller
      */
     public function update(Request $request, $desa_id, $rw_id, $kk_id, $anggota_id)
     {
-        $anggota = Anggota::with('getKk')
-            ->whereHas('getKk', function ($query) use ($rw_id) {
-                $query->where('rw_id', $rw_id);
-            })
-            ->findOrFail($anggota_id);
-
         $request->validate([
             'nama_lengkap' => 'required|string|max:255',
-            'nik' => 'nullable|string|max:20|unique:kk_members,nik,' . $anggota->id,
+            'nik' => 'nullable|string|max:20|unique:kk_members,nik,' . $anggota_id,
             'jenis_kelamin' => 'required|in:LAKI-LAKI,PEREMPUAN',
             'tempat_lahir' => 'nullable|string|max:255',
             'tanggal_lahir' => 'nullable|date',
@@ -155,6 +272,47 @@ class AnggotaController extends Controller
             'provinsi' => 'nullable|string|max:255',
             'kk_disahkan_tanggal' => 'nullable|date',
         ]);
+
+        $token = $this->getApiToken();
+        $userId = $this->getUserId();
+
+        if ($token && $userId) {
+            try {
+                $requestData = $request->all();
+                $requestData['user_id'] = $userId;
+
+                $response = Http::withToken($token)
+                    ->timeout(30)
+                    ->put($this->getApiUrl() . "/desa/{$desa_id}/rw/{$rw_id}/kk/{$kk_id}/anggota/{$anggota_id}", $requestData);
+
+                if ($response->successful()) {
+                    $apiData = $response->json();
+                    if ($apiData['success']) {
+                        return redirect()->route('kk.index', [$desa_id, $rw_id, $kk_id])
+                            ->with('success', 'Anggota keluarga berhasil diperbarui.');
+                    } else {
+                        return redirect()->back()
+                            ->withInput()
+                            ->with('error', 'API Error: ' . ($apiData['message'] ?? 'Unknown error'));
+                    }
+                } else {
+                    return redirect()->back()
+                        ->withInput()
+                        ->with('error', 'API request failed with status: ' . $response->status());
+                }
+            } catch (\Exception $e) {
+                return redirect()->back()
+                    ->withInput()
+                    ->with('error', 'Connection error: ' . $e->getMessage());
+            }
+        }
+
+        // Fallback to local operation
+        $anggota = Anggota::with('getKk')
+            ->whereHas('getKk', function ($query) use ($rw_id) {
+                $query->where('rw_id', $rw_id);
+            })
+            ->findOrFail($anggota_id);
 
         $anggota->update([
             'nama_lengkap' => $request->nama_lengkap,
@@ -193,6 +351,37 @@ class AnggotaController extends Controller
      */
     public function destroy($desa_id, $rw_id, $kk_id, $anggota_id)
     {
+        $token = $this->getApiToken();
+        $userId = $this->getUserId();
+
+        if ($token && $userId) {
+            try {
+                $response = Http::withToken($token)
+                    ->timeout(30)
+                    ->delete($this->getApiUrl() . "/desa/{$desa_id}/rw/{$rw_id}/kk/{$kk_id}/anggota/{$anggota_id}", [
+                        'user_id' => $userId
+                    ]);
+
+                if ($response->successful()) {
+                    $apiData = $response->json();
+                    if ($apiData['success']) {
+                        return redirect()->route('kk.index', [$desa_id, $rw_id, $kk_id])
+                            ->with('success', 'Anggota keluarga berhasil dihapus.');
+                    } else {
+                        return redirect()->back()
+                            ->with('error', 'API Error: ' . ($apiData['message'] ?? 'Unknown error'));
+                    }
+                } else {
+                    return redirect()->back()
+                        ->with('error', 'API request failed with status: ' . $response->status());
+                }
+            } catch (\Exception $e) {
+                return redirect()->back()
+                    ->with('error', 'Connection error: ' . $e->getMessage());
+            }
+        }
+
+        // Fallback to local operation
         $anggota = Anggota::with('getKk')
             ->whereHas('getKk', function ($query) use ($rw_id) {
                 $query->where('rw_id', $rw_id);
@@ -210,6 +399,73 @@ class AnggotaController extends Controller
      */
     public function editStandalone($desa_id, $rw_id, $anggota_id)
     {
+        $token = $this->getApiToken();
+        $userId = $this->getUserId();
+
+        if ($token && $userId) {
+            try {
+                // Get RW data with KK list from API
+                $rwResponse = Http::withToken($token)
+                    ->timeout(30)
+                    ->get($this->getApiUrl() . "/desa/{$desa_id}/rw/{$rw_id}", [
+                        'user_id' => $userId
+                    ]);
+
+                // Get standalone anggota data from API
+                $anggotaResponse = Http::withToken($token)
+                    ->timeout(30)
+                    ->get($this->getApiUrl() . "/desa/{$desa_id}/rw/{$rw_id}/standalone/{$anggota_id}", [
+                        'user_id' => $userId
+                    ]);
+
+
+                if ($rwResponse->successful() && $anggotaResponse->successful()) {
+                    $rwData = $rwResponse->json();
+                    $anggotaData = $anggotaResponse->json();
+
+                    if ($rwData['success'] && $anggotaData['success']) {
+                        // Convert API response to objects for view compatibility
+                        $rw = (object) $rwData['data']['rw'];
+                        if (isset($rw->get_desa)) {
+                            $rw->getDesa = (object) $rw->get_desa;
+                        }
+                        if (isset($rw->get_k_k)) {
+                            $rw->getKK = collect($rw->get_k_k)->map(function ($kk) {
+                                return (object) $kk;
+                            });
+                        }
+
+                        $anggota = (object) $anggotaData['data'];
+
+
+                        // Prepare KK data for JavaScript
+                        $kkData = $rw->getKK->filter(function ($kk) {
+                            return $kk->no_kk !== '0000000000000000';
+                        })->map(function ($kk) {
+                            return [
+                                'id' => $kk->id,
+                                'no_kk' => $kk->no_kk,
+                                'nama_kepala_keluarga' => $kk->nama_kepala_keluarga,
+                                'search_text' => strtolower("{$kk->no_kk} {$kk->nama_kepala_keluarga}")
+                            ];
+                        })->values();
+
+                        return view('anggota.standalone-form', compact('rw', 'anggota', 'kkData'));
+                    } else {
+                        return redirect()->back()
+                            ->with('error', 'API Error: ' . ($rwData['message'] ?? $anggotaData['message'] ?? 'Unknown error'));
+                    }
+                } else {
+                    return redirect()->back()
+                        ->with('error', 'API request failed with status: ' . ($rwResponse->status() . '/' . $anggotaResponse->status()));
+                }
+            } catch (\Exception $e) {
+                return redirect()->back()
+                    ->with('error', 'Connection error: ' . $e->getMessage());
+            }
+        }
+
+        // Fallback to local data
         $rw = RW::with([
             'getDesa',
             'getKK' => function ($query) {
@@ -272,6 +528,53 @@ class AnggotaController extends Controller
             'assign_to_kk' => 'nullable|exists:kk,id',
         ]);
 
+        $token = $this->getApiToken();
+        $userId = $this->getUserId();
+
+        if ($token && $userId) {
+            try {
+                $requestData = $request->all();
+                $requestData['user_id'] = $userId;
+
+                $response = Http::withToken($token)
+                    ->timeout(30)
+                    ->put($this->getApiUrl() . "/desa/{$desa_id}/rw/{$rw_id}/standalone/{$anggota_id}", $requestData);
+
+                if ($response->successful()) {
+                    $apiData = $response->json();
+                    if ($apiData['success']) {
+                        $message = 'Data anggota berhasil diperbarui.';
+                        if ($request->assign_to_kk) {
+                            $message = 'Anggota berhasil dipindahkan ke KK.';
+                        } else if ($request->no_kk) {
+                            $message = 'KK baru berhasil dibuat dan anggota dipindahkan.';
+                        }
+
+                        return redirect()->route('rw.index', [$desa_id, $rw_id])
+                            ->with('success', $message);
+                    } else {
+                        return redirect()->back()
+                            ->withInput()
+                            ->with('error', 'API Error: ' . ($apiData['message'] ?? 'Unknown error'));
+                    }
+                } else {
+                    $errors = $response->json()['errors'] ?? [];
+                    $errorMessage = 'API request failed with status: ' . $response->status();
+                    if (!empty($errors)) {
+                        $errorMessage .= ' - ' . collect($errors)->flatten()->implode(' ');
+                    }
+                    return redirect()->back()
+                        ->withInput()
+                        ->with('error', $errorMessage);
+                }
+            } catch (\Exception $e) {
+                return redirect()->back()
+                    ->withInput()
+                    ->with('error', 'Connection error: ' . $e->getMessage());
+            }
+        }
+
+        // Fallback to local operation
         // Find anggota that belongs to zero KK only
         $anggota = Anggota::whereHas('getKk', function ($query) use ($rw_id) {
             $query->where('rw_id', $rw_id)
@@ -353,6 +656,37 @@ class AnggotaController extends Controller
 
     public function destroyStandalone($desa_id, $rw_id, $anggota_id)
     {
+        $token = $this->getApiToken();
+        $userId = $this->getUserId();
+
+        if ($token && $userId) {
+            try {
+                $response = Http::withToken($token)
+                    ->timeout(30)
+                    ->delete($this->getApiUrl() . "/desa/{$desa_id}/rw/{$rw_id}/standalone/{$anggota_id}", [
+                        'user_id' => $userId
+                    ]);
+
+                if ($response->successful()) {
+                    $apiData = $response->json();
+                    if ($apiData['success']) {
+                        return redirect()->route('rw.index', [$desa_id, $rw_id])
+                            ->with('success', 'Anggota berhasil dihapus.');
+                    } else {
+                        return redirect()->back()
+                            ->with('error', 'API Error: ' . ($apiData['message'] ?? 'Unknown error'));
+                    }
+                } else {
+                    return redirect()->back()
+                        ->with('error', 'API request failed with status: ' . $response->status());
+                }
+            } catch (\Exception $e) {
+                return redirect()->back()
+                    ->with('error', 'Connection error: ' . $e->getMessage());
+            }
+        }
+
+        // Fallback to local operation
         // Find anggota that belongs to zero KK only
         $anggota = Anggota::whereHas('getKk', function ($query) use ($rw_id) {
             $query->where('rw_id', $rw_id)

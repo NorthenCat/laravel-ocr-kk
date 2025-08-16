@@ -16,9 +16,27 @@ class KKController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index($desa_id, $rw_id)
+    public function index(Request $request, $desa_id, $rw_id)
     {
         try {
+            $userId = $request->input('user_id');
+            if (!$userId) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'User ID is required'
+                ], 400);
+            }
+
+            $desa = Desa::findOrFail($desa_id);
+
+            // Check if user has access to this desa
+            if (!$desa->hasAccess($userId)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Access denied to this desa'
+                ], 403);
+            }
+
             $rw = RW::where('desa_id', $desa_id)->findOrFail($rw_id);
             $kks = KK::with([
                 'getRw.getDesa',
@@ -48,6 +66,7 @@ class KKController extends Controller
         $validator = Validator::make($request->all(), [
             'no_kk' => 'required|string|max:20',
             'nama_kepala_keluarga' => 'required|string|max:255',
+            'user_id' => 'required|integer',
         ]);
 
         if ($validator->fails()) {
@@ -59,6 +78,17 @@ class KKController extends Controller
         }
 
         try {
+            $userId = $request->input('user_id');
+            $desa = Desa::findOrFail($desa_id);
+
+            // Check if user has access to this desa
+            if (!$desa->hasAccess($userId)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Access denied to this desa'
+                ], 403);
+            }
+
             $rw = RW::where('desa_id', $desa_id)->findOrFail($rw_id);
 
             // Check if KK number already exists in this RW
@@ -94,9 +124,27 @@ class KKController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show($desa_id, $rw_id, $kk_id)
+    public function show(Request $request, $desa_id, $rw_id, $kk_id)
     {
         try {
+            $userId = $request->input('user_id');
+            if (!$userId) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'User ID is required'
+                ], 400);
+            }
+
+            $desa = Desa::findOrFail($desa_id);
+
+            // Check if user has access to this desa
+            if (!$desa->hasAccess($userId)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Access denied to this desa'
+                ], 403);
+            }
+
             $kk = KK::with([
                 'getRw.getDesa',
                 'getWarga' => function ($query) {
@@ -127,6 +175,7 @@ class KKController extends Controller
         $validator = Validator::make($request->all(), [
             'no_kk' => 'required|string|max:20',
             'nama_kepala_keluarga' => 'required|string|max:255',
+            'user_id' => 'required|integer',
         ]);
 
         if ($validator->fails()) {
@@ -138,6 +187,17 @@ class KKController extends Controller
         }
 
         try {
+            $userId = $request->input('user_id');
+            $desa = Desa::findOrFail($desa_id);
+
+            // Check if user has access to this desa
+            if (!$desa->hasAccess($userId)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Access denied to this desa'
+                ], 403);
+            }
+
             $kk = KK::where('rw_id', $rw_id)->findOrFail($kk_id);
 
             // Check if KK number already exists in this RW (excluding current KK)
@@ -175,9 +235,27 @@ class KKController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy($desa_id, $rw_id, $kk_id)
+    public function destroy(Request $request, $desa_id, $rw_id, $kk_id)
     {
         try {
+            $userId = $request->input('user_id');
+            if (!$userId) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'User ID is required'
+                ], 400);
+            }
+
+            $desa = Desa::findOrFail($desa_id);
+
+            // Check if user has access to this desa
+            if (!$desa->hasAccess($userId)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Access denied to this desa'
+                ], 403);
+            }
+
             $kk = KK::where('rw_id', $rw_id)->findOrFail($kk_id);
             $kk->delete();
 
@@ -240,11 +318,11 @@ class KKController extends Controller
 
         try {
             $rw = RW::where('desa_id', $desa_id)->findOrFail($rw_id);
-            
+
             $file = $request->file('file');
             $originalName = $file->getClientOriginalName();
             $extension = $file->getClientOriginalExtension();
-            
+
             // Store the uploaded file
             $path = $file->store('uploads/kk/' . $rw_id, 'public');
 

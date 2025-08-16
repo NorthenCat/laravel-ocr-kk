@@ -16,7 +16,7 @@ return new class extends Migration {
             $table->foreignId('desa_id')
                 ->constrained('desa')
                 ->onDelete('cascade');
-            $table->string('nama_rw', 100)->unique();
+            $table->string('nama_rw', 100);
             $table->string('google_drive', 255)->nullable();
             $table->timestamps();
         });

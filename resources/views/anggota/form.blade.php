@@ -171,7 +171,7 @@
                         <label for="tanggal_lahir" class="block text-sm font-medium text-gray-700 mb-2">Tanggal
                             Lahir</label>
                         <input type="date" id="tanggal_lahir" name="tanggal_lahir"
-                            value="{{ old('tanggal_lahir', isset($anggota) && $anggota->tanggal_lahir ? $anggota->tanggal_lahir->format('Y-m-d') : '') }}"
+                            value="{{ old('tanggal_lahir', isset($anggota) && $anggota->tanggal_lahir ? \Carbon\Carbon::parse($anggota->tanggal_lahir)->format('Y-m-d') : '') }}"
                             class="block w-full px-3 py-2 border @error('tanggal_lahir') border-red-300 @else border-gray-300 @enderror rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
                         @error('tanggal_lahir')
                         <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
@@ -384,7 +384,7 @@
                             <label for="kk_disahkan_tanggal" class="block text-sm font-medium text-gray-700 mb-2">KK
                                 Disahkan Tanggal</label>
                             <input type="date" id="kk_disahkan_tanggal" name="kk_disahkan_tanggal"
-                                value="{{ old('kk_disahkan_tanggal', isset($anggota) && $anggota->kk_disahkan_tanggal ? $anggota->kk_disahkan_tanggal->format('Y-m-d') : '') }}"
+                                value="{{ old('kk_disahkan_tanggal', isset($anggota) && $anggota->kk_disahkan_tanggal ? \Carbon\Carbon::parse($anggota->kk_disahkan_tanggal)->format('Y-m-d') : '') }}"
                                 class="block w-full px-3 py-2 border @error('kk_disahkan_tanggal') border-red-300 @else border-gray-300 @enderror rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
                             @error('kk_disahkan_tanggal')
                             <p class="mt-2 text-sm text-red-600">{{ $message }}</p>

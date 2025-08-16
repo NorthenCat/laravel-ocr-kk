@@ -164,11 +164,11 @@
                     </thead>
                     <tbody class="bg-white divide-y divide-gray-200">
                         @foreach($kk->getWarga->sortBy(function($anggota) {
-                            $status = strtolower($anggota->status_hubungan_dalam_keluarga);
-                            if (str_contains($status, 'kepala keluarga')) return 1;
-                            if (str_contains($status, 'isteri') || str_contains($status, 'istri')) return 2;
-                            if (str_contains($status, 'anak')) return 3;
-                            return 4;
+                        $status = strtolower($anggota->status_hubungan_dalam_keluarga);
+                        if (str_contains($status, 'kepala keluarga')) return 1;
+                        if (str_contains($status, 'isteri') || str_contains($status, 'istri')) return 2;
+                        if (str_contains($status, 'anak')) return 3;
+                        return 4;
                         }) as $anggota)
                         <tr class="hover:bg-gray-50">
                             <td class="px-6 py-4 whitespace-nowrap">
@@ -185,7 +185,7 @@
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap">
                                 <div class="text-sm text-gray-500">{{ $anggota->tanggal_lahir ?
-                                    $anggota->tanggal_lahir->format('d/m/Y') : '-' }}</div>
+                                    \Carbon\Carbon::parse($anggota->tanggal_lahir)->format('d/m/Y') : '-' }}</div>
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
                                 <div class="flex space-x-2">

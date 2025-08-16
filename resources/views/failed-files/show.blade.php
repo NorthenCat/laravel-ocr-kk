@@ -23,9 +23,9 @@
                         d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z"
                         clip-rule="evenodd" />
                 </svg>
-                <a href="{{ route('desa.show', $rw->getDesa->id) }}"
+                <a href="{{ route('desa.show', $rw->desa_id) }}"
                     class="ml-1 text-sm font-medium text-gray-700 hover:text-blue-600 md:ml-2">{{
-                    $rw->getDesa->nama_desa }}</a>
+                    $rw->desa_nama_desa }}</a>
             </div>
         </li>
         <li>
@@ -35,7 +35,7 @@
                         d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z"
                         clip-rule="evenodd" />
                 </svg>
-                <a href="{{ route('rw.index', [$rw->getDesa->id, $rw->id]) }}"
+                <a href="{{ route('rw.index', [$rw->desa_id, $rw->id]) }}"
                     class="ml-1 text-sm font-medium text-gray-700 hover:text-blue-600 md:ml-2">{{ $rw->nama_rw }}</a>
             </div>
         </li>
@@ -57,10 +57,10 @@
                 <div class="flex justify-between items-center">
                     <div>
                         <h3 class="text-lg font-semibold text-gray-900">Failed File: {{ $failedFile->filename }}</h3>
-                        <p class="text-sm text-gray-600">{{ $failedFile->failure_reason_text }} - {{
-                            $failedFile->created_at->format('M d, Y H:i') }}</p>
+                        <p class="text-sm text-gray-600">{{ $failedFile->error_message }} - {{
+                            \Carbon\Carbon::parse($failedFile->created_at)->format('M d, Y H:i') }}</p>
                     </div>
-                    <a href="{{ route('rw.index', [$rw->getDesa->id, $rw->id]) }}"
+                    <a href="{{ route('rw.index', [$rw->desa_id, $rw->id]) }}"
                         class="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
                         <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -103,8 +103,7 @@
 
                 <!-- Actions -->
                 <div class="flex justify-end space-x-3 pt-6 border-t border-gray-200">
-                    <form
-                        action="{{ route('failed-files.mark-processed', [$rw->getDesa->id, $rw->id, $failedFile->id]) }}"
+                    <form action="{{ route('failed-files.mark-processed', [$rw->desa_id, $rw->id, $failedFile->id]) }}"
                         method="POST" class="inline">
                         @csrf
                         @method('PATCH')
@@ -118,7 +117,7 @@
                             Mark as Processed
                         </button>
                     </form>
-                    <form action="{{ route('failed-files.destroy', [$rw->getDesa->id, $rw->id, $failedFile->id]) }}"
+                    <form action="{{ route('failed-files.destroy', [$rw->desa_id, $rw->id, $failedFile->id]) }}"
                         method="POST" class="inline">
                         @csrf
                         @method('DELETE')

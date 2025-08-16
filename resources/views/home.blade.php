@@ -61,11 +61,11 @@
                         <div class="flex justify-between items-center text-sm text-gray-500 mb-4">
                             <span>
                                 <i class="fas fa-building mr-1"></i>
-                                {{ $desa['get_rw_count'] ?? 0 }} RW
+                                {{ $desa['get_rw_count'] }} RW
                             </span>
                             <span>
                                 <i class="fas fa-users mr-1"></i>
-                                {{ $desa['get_k_k_count'] ?? 0 }} KK
+                                {{ $desa['get_k_k_count'] }} KK
                             </span>
                         </div>
 

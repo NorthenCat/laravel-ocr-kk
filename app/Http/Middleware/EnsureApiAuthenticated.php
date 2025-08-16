@@ -19,8 +19,9 @@ class EnsureApiAuthenticated
             if ($request->expectsJson()) {
                 return response()->json(['error' => 'API token required'], 401);
             }
+            dd(session()->all());
 
-            return redirect('/login')->with('error', 'Please login to access this page.');
+            return redirect()->route('login')->with('error', 'Please login to access this page.');
         }
 
         return $next($request);

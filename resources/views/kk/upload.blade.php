@@ -58,7 +58,7 @@
                 <p class="text-sm text-gray-600">Upload multiple image files containing KK data</p>
             </div>
 
-            <form action="{{ route('kk.upload.process', [$rw->getDesa->id, $rw->id]) }}" method="POST"
+            <form action="{{ route('kk.upload.process', [$rw->getDesa->id, $rw->uuid]) }}" method="POST"
                 enctype="multipart/form-data" class="p-6 space-y-6">
                 @csrf
 

@@ -499,7 +499,7 @@
                             <div class="space-y-2 text-sm text-gray-600">
 
                                 <p><span class="font-medium">No. KK:</span> {{ $kk->no_kk }}</p>
-                                <p><span class="font-medium">Filename:</span> {{ $kk->filename }}</p>
+                                <p><span class="font-medium">Filename:</span> {{ $kk->getWarga[0]->img_name }}</p>
                                 <p><span class="font-medium">Anggota:</span> {{ $kk->getWarga->count() }} orang</p>
                             </div>
 
@@ -641,7 +641,7 @@
                                     @endif
                                     @if($anggota->tanggal_lahir)
                                     <p><span class="font-medium">Lahir:</span> {{
-                                        $anggota->tanggal_lahir->format('d/m/Y') }}</p>
+                                        \Carbon\Carbon::parse($anggota->tanggal_lahir)->format('d/m/Y') }}</p>
                                     @endif
                                     @if($anggota->tempat_lahir)
                                     <p><span class="font-medium">Tempat:</span> {{ $anggota->tempat_lahir }}</p>
@@ -758,7 +758,7 @@
                                     @endif
                                     @if($anggota->tanggal_lahir)
                                     <p><span class="font-medium">Lahir:</span> {{
-                                        $anggota->tanggal_lahir->format('d/m/Y') }}</p>
+                                        \Carbon\Carbon::parse($anggota->tanggal_lahir)->format('d/m/Y') }}</p>
                                     @endif
                                     @if($anggota->tempat_lahir)
                                     <p><span class="font-medium">Tempat:</span> {{ $anggota->tempat_lahir }}</p>

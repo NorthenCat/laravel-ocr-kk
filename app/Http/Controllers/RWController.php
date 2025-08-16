@@ -55,41 +55,41 @@ class RWController extends Controller
                     'user_id' => $userId
                 ]);
 
+
+
             if ($response->successful()) {
                 $apiData = $response->json();
                 if ($apiData['success']) {
                     $data = $apiData['data'];
-
                     // Sync RW data to local database (for job status relationships)
                     $rwData = $data['rw'];
-
                     // Use DB::table for raw insert/update to handle specific IDs
-                    $localRw = \DB::table('rw')->where('id', $rwData['id'])->first();
-
+                    $localRw = RW::where('uuid', $rwData['uuid'])->first();
                     if ($localRw) {
                         // Update existing record
-                        \DB::table('rw')->where('id', $rwData['id'])->update([
-                            'uuid' => $rwData['uuid'],
+                        RW::where('uuid', $rwData['uuid'])->update([
                             'nama_rw' => $rwData['nama_rw'],
-                            'desa_id' => $rwData['desa_id'],
                             'google_drive' => $rwData['google_drive'] ?? null,
                             'updated_at' => now(),
                         ]);
                     } else {
                         // Insert new record with specific ID
-                        \DB::table('rw')->insert([
-                            'id' => $rwData['id'],
-                            'uuid' => $rwData['uuid'],
-                            'nama_rw' => $rwData['nama_rw'],
-                            'desa_id' => $rwData['desa_id'],
-                            'google_drive' => $rwData['google_drive'] ?? null,
-                            'created_at' => $rwData['created_at'],
-                            'updated_at' => $rwData['updated_at'],
-                        ]);
+                        try {
+                            RW::create([
+                                'uuid' => $rwData['uuid'],
+                                'nama_rw' => $rwData['nama_rw'],
+                                'desa_id' => $rwData['desa_id'],
+                                'google_drive' => $rwData['google_drive'] ?? null,
+                                'created_at' => $rwData['created_at'],
+                                'updated_at' => $rwData['updated_at'],
+                            ]);
+                        } catch (\Exception $e) {
+                            dd('RW insert error:', $e->getMessage());
+                        }
                     }
 
                     // Get the RW instance for relationships
-                    $localRwInstance = RW::find($rwData['id']);
+                    $localRwInstance = RW::where('uuid', $rwData['uuid'])->first();
 
                     // Convert arrays to objects for compatibility with Blade views
                     $rw = (object) $data['rw'];
@@ -102,12 +102,14 @@ class RWController extends Controller
                         return $kkObj;
                     });
 
+
                     // Get job status from local database using the synced RW
                     $jobStatus = $localRwInstance->getJobStatus()
                         ->orderBy('created_at', 'desc')
                         ->limit(5)
                         ->get();
                     $rw->getJobStatus = $jobStatus;
+
 
                     // Get current job status from local
                     $currentJobStatus = $localRwInstance->getCurrentJobStatus;
@@ -122,13 +124,13 @@ class RWController extends Controller
 
                     $standaloneAnggota = collect($data['standalone_anggota'] ?? [])->map(function ($anggota) {
                         $anggotaObj = (object) $anggota;
-                        $anggotaObj->getKk = isset($anggota['getKk']) ? (object) $anggota['getKk'] : null;
+                        $anggotaObj->getKk = isset($anggota['get_kk']) ? (object) $anggota['get_kk'] : null;
                         return $anggotaObj;
                     });
 
                     $anggotaTanpaNik = collect($data['anggota_tanpa_nik'] ?? [])->map(function ($anggota) {
                         $anggotaObj = (object) $anggota;
-                        $anggotaObj->getKk = isset($anggota['getKk']) ? (object) $anggota['getKk'] : null;
+                        $anggotaObj->getKk = isset($anggota['get_kk']) ? (object) $anggota['get_kk'] : null;
                         return $anggotaObj;
                     });
 
@@ -270,8 +272,7 @@ class RWController extends Controller
                     $rwData = $apiData['data'];
 
                     // Sync the created RW to local database
-                    \DB::table('rw')->insert([
-                        'id' => $rwData['id'],
+                    RW::create([
                         'uuid' => $rwData['uuid'],
                         'nama_rw' => $rwData['nama_rw'],
                         'desa_id' => $rwData['desa_id'],

@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Anggota;
 use App\Models\KK;
 use App\Models\RW;
+use App\Models\Desa;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Carbon\Carbon;
@@ -15,9 +16,26 @@ class AnggotaController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index($desa_id, $rw_id, $kk_id)
+    public function index(Request $request, $desa_id, $rw_id, $kk_id)
     {
         try {
+            $userId = $request->input('user_id');
+            if (!$userId) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'User ID is required'
+                ], 400);
+            }
+
+            // Check desa access
+            $desa = Desa::find($desa_id);
+            if (!$desa || !$desa->hasAccess($userId)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Access denied to this desa'
+                ], 403);
+            }
+
             $kk = KK::where('rw_id', $rw_id)->findOrFail($kk_id);
             $anggota = Anggota::with('getKk.getRw.getDesa')
                 ->where('kk_id', $kk->id)
@@ -42,6 +60,23 @@ class AnggotaController extends Controller
      */
     public function store(Request $request, $desa_id, $rw_id, $kk_id)
     {
+        $userId = $request->input('user_id');
+        if (!$userId) {
+            return response()->json([
+                'success' => false,
+                'message' => 'User ID is required'
+            ], 400);
+        }
+
+        // Check desa access
+        $desa = Desa::find($desa_id);
+        if (!$desa || !$desa->hasAccess($userId)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Access denied to this desa'
+            ], 403);
+        }
+
         $validator = Validator::make($request->all(), [
             'nama_lengkap' => 'required|string|max:255',
             'nik' => 'nullable|string|max:20|unique:kk_members,nik',
@@ -127,9 +162,26 @@ class AnggotaController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show($desa_id, $rw_id, $kk_id, $anggota_id)
+    public function show(Request $request, $desa_id, $rw_id, $kk_id, $anggota_id)
     {
         try {
+            $userId = $request->input('user_id');
+            if (!$userId) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'User ID is required'
+                ], 400);
+            }
+
+            // Check desa access
+            $desa = Desa::find($desa_id);
+            if (!$desa || !$desa->hasAccess($userId)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Access denied to this desa'
+                ], 403);
+            }
+
             $anggota = Anggota::with('getKk.getRw.getDesa')
                 ->whereHas('getKk', function ($query) use ($rw_id) {
                     $query->where('rw_id', $rw_id);
@@ -155,6 +207,23 @@ class AnggotaController extends Controller
      */
     public function update(Request $request, $desa_id, $rw_id, $kk_id, $anggota_id)
     {
+        $userId = $request->input('user_id');
+        if (!$userId) {
+            return response()->json([
+                'success' => false,
+                'message' => 'User ID is required'
+            ], 400);
+        }
+
+        // Check desa access
+        $desa = Desa::find($desa_id);
+        if (!$desa || !$desa->hasAccess($userId)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Access denied to this desa'
+            ], 403);
+        }
+
         $validator = Validator::make($request->all(), [
             'nama_lengkap' => 'required|string|max:255',
             'nik' => 'nullable|string|max:20|unique:kk_members,nik,' . $anggota_id,
@@ -243,9 +312,26 @@ class AnggotaController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy($desa_id, $rw_id, $kk_id, $anggota_id)
+    public function destroy(Request $request, $desa_id, $rw_id, $kk_id, $anggota_id)
     {
         try {
+            $userId = $request->input('user_id');
+            if (!$userId) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'User ID is required'
+                ], 400);
+            }
+
+            // Check desa access
+            $desa = Desa::find($desa_id);
+            if (!$desa || !$desa->hasAccess($userId)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Access denied to this desa'
+                ], 403);
+            }
+
             $anggota = Anggota::whereHas('getKk', function ($query) use ($rw_id) {
                 $query->where('rw_id', $rw_id);
             })
@@ -270,9 +356,26 @@ class AnggotaController extends Controller
     /**
      * Display standalone anggota
      */
-    public function showStandalone($desa_id, $rw_id, $anggota_id)
+    public function showStandalone(Request $request, $desa_id, $rw_id, $anggota_id)
     {
         try {
+            $userId = $request->input('user_id');
+            if (!$userId) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'User ID is required'
+                ], 400);
+            }
+
+            // Check desa access
+            $desa = Desa::find($desa_id);
+            if (!$desa || !$desa->hasAccess($userId)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Access denied to this desa'
+                ], 403);
+            }
+
             $anggota = Anggota::with('getKk.getRw.getDesa')
                 ->whereHas('getKk', function ($query) use ($rw_id) {
                     $query->where('rw_id', $rw_id)
@@ -298,6 +401,23 @@ class AnggotaController extends Controller
      */
     public function updateStandalone(Request $request, $desa_id, $rw_id, $anggota_id)
     {
+        $userId = $request->input('user_id');
+        if (!$userId) {
+            return response()->json([
+                'success' => false,
+                'message' => 'User ID is required'
+            ], 400);
+        }
+
+        // Check desa access
+        $desa = Desa::find($desa_id);
+        if (!$desa || !$desa->hasAccess($userId)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Access denied to this desa'
+            ], 403);
+        }
+
         $validator = Validator::make($request->all(), [
             'nama_lengkap' => 'required|string|max:255',
             'nik' => 'nullable|string|max:20|unique:kk_members,nik,' . $anggota_id,
@@ -324,6 +444,8 @@ class AnggotaController extends Controller
             'kabupaten_kota' => 'nullable|string|max:255',
             'provinsi' => 'nullable|string|max:255',
             'kk_disahkan_tanggal' => 'nullable|date',
+            'no_kk' => 'nullable|string|max:20',
+            'assign_to_kk' => 'nullable|exists:kk,id',
         ]);
 
         if ($validator->fails()) {
@@ -341,7 +463,60 @@ class AnggotaController extends Controller
             })
                 ->findOrFail($anggota_id);
 
-            $anggota->update($request->all());
+            $rw = RW::where('desa_id', $desa_id)->findOrFail($rw_id);
+
+            // If assigning to existing KK
+            if ($request->assign_to_kk) {
+                $kk = KK::where('rw_id', $rw_id)
+                    ->where('no_kk', '!=', '0000000000000000') // Prevent assignment to zero KK
+                    ->findOrFail($request->assign_to_kk);
+                $anggota->update(['kk_id' => $kk->id]);
+
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Anggota berhasil dipindahkan ke KK ' . $kk->no_kk,
+                    'data' => $anggota->load('getKk.getRw.getDesa')
+                ]);
+            }
+
+            // If creating new KK
+            if ($request->no_kk) {
+                // Prevent creating KK with 16 zeros manually
+                if ($request->no_kk === '0000000000000000') {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Nomor KK tidak boleh 16 angka nol.'
+                    ], 422);
+                }
+
+                // Check if KK number already exists
+                $existingKK = KK::where('rw_id', $rw->id)->where('no_kk', $request->no_kk)->first();
+                if ($existingKK) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Nomor KK sudah terdaftar di RW ini.'
+                    ], 422);
+                }
+
+                // Create new KK
+                $kk = KK::create([
+                    'uuid' => \Illuminate\Support\Str::uuid(),
+                    'no_kk' => $request->no_kk,
+                    'nama_kepala_keluarga' => $request->nama_lengkap,
+                    'rw_id' => $rw->id,
+                ]);
+
+                $anggota->update(['kk_id' => $kk->id]);
+
+                return response()->json([
+                    'success' => true,
+                    'message' => 'KK baru berhasil dibuat dan anggota dipindahkan.',
+                    'data' => $anggota->load('getKk.getRw.getDesa')
+                ]);
+            }
+
+            // Update anggota data only
+            $anggota->update($request->except(['user_id', 'assign_to_kk', 'no_kk']));
 
             return response()->json([
                 'success' => true,
@@ -360,9 +535,26 @@ class AnggotaController extends Controller
     /**
      * Delete standalone anggota
      */
-    public function destroyStandalone($desa_id, $rw_id, $anggota_id)
+    public function destroyStandalone(Request $request, $desa_id, $rw_id, $anggota_id)
     {
         try {
+            $userId = $request->input('user_id');
+            if (!$userId) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'User ID is required'
+                ], 400);
+            }
+
+            // Check desa access
+            $desa = Desa::find($desa_id);
+            if (!$desa || !$desa->hasAccess($userId)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Access denied to this desa'
+                ], 403);
+            }
+
             $anggota = Anggota::whereHas('getKk', function ($query) use ($rw_id) {
                 $query->where('rw_id', $rw_id)
                     ->where('no_kk', '0000000000000000');

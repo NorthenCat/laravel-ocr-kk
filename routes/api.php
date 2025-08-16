@@ -46,6 +46,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::delete('/desa/{desa}/users/{user}', [DesaController::class, 'removeUser']);
 
     // RW Management (nested under Desa)
+    Route::get('/rw/{uuid}', [RwController::class, 'getRw']);
     Route::prefix('desa/{desa}')->group(function () {
         Route::apiResource('rw', RwController::class);
         Route::get('/rw/{rw}/export-excel', [RwController::class, 'exportExcel']);
@@ -73,7 +74,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
             // Failed Files Routes
             Route::prefix('failed-files')->group(function () {
                 Route::get('/{file}', [FailedKkFileController::class, 'show']);
-                Route::patch('/{file}/mark-processed', [FailedKkFileController::class, 'markAsProcessed']);
+                Route::put('/{file}/mark-processed', [FailedKkFileController::class, 'markAsProcessed']);
                 Route::delete('/{file}', [FailedKkFileController::class, 'destroy']);
             });
         });

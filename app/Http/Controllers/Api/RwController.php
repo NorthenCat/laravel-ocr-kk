@@ -627,4 +627,33 @@ class RwController extends Controller
             return null;
         }
     }
+
+    public function getRw($uuid)
+    {
+        $rw_uuid = $uuid;
+
+        if (!$rw_uuid) {
+            return response()->json([
+                'success' => false,
+                'message' => 'RW UUID is required'
+            ], 400);
+        }
+
+        try {
+            $rw = RW::with(['getDesa', 'getKK.getWarga'])
+                ->where('uuid', $rw_uuid)
+                ->firstOrFail();
+
+            return response()->json([
+                'success' => true,
+                'data' => $rw
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'RW not found',
+                'error' => $e->getMessage()
+            ], 404);
+        }
+    }
 }

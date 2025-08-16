@@ -28,6 +28,10 @@ class FailedKkFile extends Model
         'manually_processed' => 'boolean'
     ];
 
+    protected $appends = [
+        'failure_reason_text'
+    ];
+
     public function rw()
     {
         return $this->belongsTo(RW::class);
