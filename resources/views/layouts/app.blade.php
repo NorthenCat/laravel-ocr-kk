@@ -92,6 +92,13 @@
         <main class="py-6">
             @yield('content')
         </main>
+
+        {{-- Footer with app native version --}}
+        <footer class="bg-white shadow-sm border-t border-gray-200">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 text-center text-sm text-gray-500">
+                <p>&copy; {{ date('Y') }} {{ config('app.name', 'KK Desa') }}. All rights reserved.</p>
+                <p>Version: {{ config('NATIVEPHP_APP_VERSION', '1.0.0') }}</p>
+            </div>
     </div>
 
     <script>

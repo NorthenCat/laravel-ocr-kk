@@ -273,15 +273,45 @@ class RwController extends Controller
     /**
      * Export to Excel.
      */
-    public function exportExcel($desa_id, $rw_id)
+    public function exportExcel(Request $request, $desa_id, $rw_id)
     {
         try {
+            $userId = $request->input('user_id');
+            if (!$userId) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'User ID is required'
+                ], 400);
+            }
+
+            $desa = Desa::findOrFail($desa_id);
+
+            // Check if user has access to this desa
+            if (!$desa->hasAccess($userId)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Access denied to this desa'
+                ], 403);
+            }
+
             $rw = RW::with('getDesa')->where('desa_id', $desa_id)->findOrFail($rw_id);
 
             $fileName = 'KK-OCR_' . $rw->getDesa->nama_desa . '_' . $rw->nama_rw . '_' . now()->format('Y-m-d_H-i-s') . '.xlsx';
 
-            return Excel::download(new AnggotaExport($rw_id, true), $fileName);
+            // Return the Excel file as download response
+            return Excel::download(new AnggotaExport($rw_id, true), $fileName, \Maatwebsite\Excel\Excel::XLSX, [
+                'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                'Cache-Control' => 'max-age=0',
+                'Content-Disposition' => 'attachment; filename="' . $fileName . '"'
+            ]);
+
         } catch (\Exception $e) {
+            \Log::error('API Export Excel failed', [
+                'desa_id' => $desa_id,
+                'rw_id' => $rw_id,
+                'error' => $e->getMessage()
+            ]);
+
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to export Excel',
@@ -293,15 +323,45 @@ class RwController extends Controller
     /**
      * Export to Excel without filename.
      */
-    public function exportExcelWithoutFilename($desa_id, $rw_id)
+    public function exportExcelWithoutFilename(Request $request, $desa_id, $rw_id)
     {
         try {
+            $userId = $request->input('user_id');
+            if (!$userId) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'User ID is required'
+                ], 400);
+            }
+
+            $desa = Desa::findOrFail($desa_id);
+
+            // Check if user has access to this desa
+            if (!$desa->hasAccess($userId)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Access denied to this desa'
+                ], 403);
+            }
+
             $rw = RW::with('getDesa')->where('desa_id', $desa_id)->findOrFail($rw_id);
 
             $fileName = 'KK-OCR_NoFilename_' . $rw->getDesa->nama_desa . '_' . $rw->nama_rw . '_' . now()->format('Y-m-d_H-i-s') . '.xlsx';
 
-            return Excel::download(new AnggotaExport($rw_id, false), $fileName);
+            // Return the Excel file as download response (without filename in the export data)
+            return Excel::download(new AnggotaExport($rw_id, false), $fileName, \Maatwebsite\Excel\Excel::XLSX, [
+                'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                'Cache-Control' => 'max-age=0',
+                'Content-Disposition' => 'attachment; filename="' . $fileName . '"'
+            ]);
+
         } catch (\Exception $e) {
+            \Log::error('API Export Excel Without Filename failed', [
+                'desa_id' => $desa_id,
+                'rw_id' => $rw_id,
+                'error' => $e->getMessage()
+            ]);
+
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to export Excel',

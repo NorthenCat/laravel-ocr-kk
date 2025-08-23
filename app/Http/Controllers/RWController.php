@@ -489,18 +489,41 @@ class RWController extends Controller
             }
 
             // Get export data from API
-            $response = Http::timeout(30)
+            $response = Http::timeout(60) // Increase timeout for file generation
                 ->withToken($apiToken)
                 ->get($apiUrl . '/desa/' . $desa_id . '/rw/' . $rw_id . '/export-excel', [
                     'user_id' => $userId
                 ]);
 
             if ($response->successful()) {
-                // If API returns a file download, pass it through
-                return $response->body();
+                // Check if response is a file (binary data)
+                $contentType = $response->header('Content-Type') ?? '';
+
+                if (
+                    str_contains($contentType, 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet') ||
+                    str_contains($contentType, 'application/octet-stream')
+                ) {
+
+                    // Get filename from Content-Disposition header or create default
+                    $contentDisposition = $response->header('Content-Disposition');
+                    $fileName = 'export.xlsx';
+
+                    if ($contentDisposition && preg_match('/filename="([^"]+)"/', $contentDisposition, $matches)) {
+                        $fileName = $matches[1];
+                    } else {
+                        // Create default filename
+                        $rw = RW::with('getDesa')->where('desa_id', $desa_id)->findOrFail($rw_id);
+                        $fileName = 'KK-OCR_' . $rw->getDesa->nama_desa . '_' . $rw->nama_rw . '_' . now()->format('Y-m-d_H-i-s') . '.xlsx';
+                    }
+
+                    return response($response->body())
+                        ->header('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+                        ->header('Content-Disposition', 'attachment; filename="' . $fileName . '"')
+                        ->header('Cache-Control', 'max-age=0');
+                }
             }
 
-            // Fallback to local export
+            // Fallback to local export if API doesn't return file
             $rw = RW::with('getDesa')->where('desa_id', $desa_id)->findOrFail($rw_id);
             $fileName = 'KK-OCR_' . $rw->getDesa->nama_desa . '_' . $rw->nama_rw . '_' . now()->format('Y-m-d_H-i-s') . '.xlsx';
             return Excel::download(new AnggotaExport($rw_id, true), $fileName);
@@ -530,18 +553,41 @@ class RWController extends Controller
             }
 
             // Get export data from API
-            $response = Http::timeout(30)
+            $response = Http::timeout(60) // Increase timeout for file generation
                 ->withToken($apiToken)
                 ->get($apiUrl . '/desa/' . $desa_id . '/rw/' . $rw_id . '/export-excel-no-filename', [
                     'user_id' => $userId
                 ]);
 
             if ($response->successful()) {
-                // If API returns a file download, pass it through
-                return $response->body();
+                // Check if response is a file (binary data)
+                $contentType = $response->header('Content-Type') ?? '';
+
+                if (
+                    str_contains($contentType, 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet') ||
+                    str_contains($contentType, 'application/octet-stream')
+                ) {
+
+                    // Get filename from Content-Disposition header or create default
+                    $contentDisposition = $response->header('Content-Disposition');
+                    $fileName = 'export.xlsx';
+
+                    if ($contentDisposition && preg_match('/filename="([^"]+)"/', $contentDisposition, $matches)) {
+                        $fileName = $matches[1];
+                    } else {
+                        // Create default filename
+                        $rw = RW::with('getDesa')->where('desa_id', $desa_id)->findOrFail($rw_id);
+                        $fileName = 'KK-OCR_NoFilename_' . $rw->getDesa->nama_desa . '_' . $rw->nama_rw . '_' . now()->format('Y-m-d_H-i-s') . '.xlsx';
+                    }
+
+                    return response($response->body())
+                        ->header('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+                        ->header('Content-Disposition', 'attachment; filename="' . $fileName . '"')
+                        ->header('Cache-Control', 'max-age=0');
+                }
             }
 
-            // Fallback to local export
+            // Fallback to local export if API doesn't return file
             $rw = RW::with('getDesa')->where('desa_id', $desa_id)->findOrFail($rw_id);
             $fileName = 'KK-OCR_NoFilename_' . $rw->getDesa->nama_desa . '_' . $rw->nama_rw . '_' . now()->format('Y-m-d_H-i-s') . '.xlsx';
             return Excel::download(new AnggotaExport($rw_id, false), $fileName);
