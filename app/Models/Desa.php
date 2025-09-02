@@ -22,7 +22,7 @@ class Desa extends Model
 
     public function getRw()
     {
-        return $this->hasMany(Rw::class, 'desa_id', 'id');
+        return $this->hasMany(RW::class, 'desa_id', 'id');
     }
 
     public function getKK()
