@@ -451,6 +451,65 @@ class RwController extends Controller
                 ], 400);
             }
 
+            //Validate every anggota keluarga nik is unique in database
+            $niks = array_map(function ($anggota) {
+                return $anggota['NIK'] ?? null;
+            }, $data['AnggotaKeluarga']);
+
+            // Filter out empty/null NIKs for duplicate checking
+            $validNiks = array_filter($niks, function ($nik) {
+                return !empty($nik) && $nik !== '-';
+            });
+
+            // Check for duplicates within the submitted data
+            $duplicateNiks = array_filter(array_count_values($validNiks), function ($count) {
+                return $count > 1;
+            });
+
+            if (!empty($duplicateNiks)) {
+                \Log::warning('Duplicate NIKs found in OCR data in API server', [
+                    'filename' => $request->input('filename'),
+                    'duplicates' => $duplicateNiks,
+                    'batch_id' => $request->input('batch_id')
+                ]);
+
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Duplicate NIKs found in AnggotaKeluarga data',
+                    'data' => [
+                        'filename' => $request->input('filename'),
+                        'duplicate_niks' => array_keys($duplicateNiks),
+                        'failure_reason' => 'duplicate_nik_in_anggota'
+                    ]
+                ], 400);
+            }
+
+            // Check for existing NIKs in database
+            if (!empty($validNiks)) {
+                $existingNiks = Anggota::whereIn('nik', $validNiks)->pluck('nik')->toArray();
+                
+                if (!empty($existingNiks)) {
+                    \Log::warning('NIKs already exist in database in API server', [
+                        'filename' => $request->input('filename'),
+                        'existing_niks' => $existingNiks,
+                        'batch_id' => $request->input('batch_id')
+                    ]);
+
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'NIKs already exist in database',
+                        'data' => [
+                            'filename' => $request->input('filename'),
+                            'existing_niks' => $existingNiks,
+                            'failure_reason' => 'nik_already_exists'
+                        ]
+                    ], 409);
+                }
+            }
+
+
+
+
             \DB::beginTransaction();
 
             try {
