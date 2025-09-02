@@ -451,49 +451,17 @@ class RwController extends Controller
                 ], 400);
             }
 
-            // Get NIKs from anggota data and check for existing ones
-            $originalAnggotaCount = count($data['AnggotaKeluarga']);
-            $skippedAnggota = [];
-            $validAnggota = [];
-
-            foreach ($data['AnggotaKeluarga'] as $index => $anggotaData) {
-                $nik = $anggotaData['NIK'] ?? null;
-                
-                // Skip empty/null NIKs or process them
-                if (empty($nik) || $nik === '-') {
-                    $validAnggota[] = $anggotaData;
-                    continue;
-                }
-
-                // Check if NIK already exists in database
-                $existingAnggota = Anggota::where('nik', $nik)->first();
-                if ($existingAnggota) {
-                    $skippedAnggota[] = [
-                        'nama_lengkap' => $anggotaData['NamaLengkap'] ?? 'Unknown',
-                        'nik' => $nik,
-                        'reason' => 'NIK already exists in database'
-                    ];
-                    
-                    \Log::info('Skipping anggota with existing NIK', [
-                        'nama_lengkap' => $anggotaData['NamaLengkap'] ?? 'Unknown',
-                        'nik' => $nik,
-                        'filename' => $request->input('filename'),
-                        'batch_id' => $request->input('batch_id')
-                    ]);
-                } else {
-                    $validAnggota[] = $anggotaData;
-                }
-            }
-
-            // Check for duplicates within the valid anggota data
+            //Validate every anggota keluarga nik is unique in database
             $niks = array_map(function ($anggota) {
                 return $anggota['NIK'] ?? null;
-            }, $validAnggota);
+            }, $data['AnggotaKeluarga']);
 
+            // Filter out empty/null NIKs for duplicate checking
             $validNiks = array_filter($niks, function ($nik) {
                 return !empty($nik) && $nik !== '-';
             });
 
+            // Check for duplicates within the submitted data
             $duplicateNiks = array_filter(array_count_values($validNiks), function ($count) {
                 return $count > 1;
             });
@@ -516,21 +484,28 @@ class RwController extends Controller
                 ], 400);
             }
 
-            // If no valid anggota remain, return error
-            if (empty($validAnggota)) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'All anggota have existing NIKs in database',
-                    'data' => [
+            // Check for existing NIKs in database
+            if (!empty($validNiks)) {
+                $existingNiks = Anggota::whereIn('nik', $validNiks)->pluck('nik')->toArray();
+                
+                if (!empty($existingNiks)) {
+                    \Log::warning('NIKs already exist in database in API server', [
                         'filename' => $request->input('filename'),
-                        'skipped_anggota' => $skippedAnggota,
-                        'failure_reason' => 'all_niks_exist'
-                    ]
-                ], 400);
-            }
+                        'existing_niks' => $existingNiks,
+                        'batch_id' => $request->input('batch_id')
+                    ]);
 
-            // Update the data array with valid anggota only
-            $data['AnggotaKeluarga'] = $validAnggota;
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'NIKs already exist in database',
+                        'data' => [
+                            'filename' => $request->input('filename'),
+                            'existing_niks' => $existingNiks,
+                            'failure_reason' => 'nik_already_exists'
+                        ]
+                    ], 409);
+                }
+            }
 
 
 
@@ -595,30 +570,13 @@ class RwController extends Controller
 
                     \DB::commit();
 
-                    // Determine success status based on whether any anggota were skipped
-                    $isFullySuccessful = empty($skippedAnggota);
-                    $message = $isFullySuccessful 
-                        ? 'Anggota records created and assigned to zero KK'
-                        : 'Anggota records created and assigned to zero KK, but some anggota were skipped';
-
-                    // Add skipped anggota details to message if any
-                    if (!empty($skippedAnggota)) {
-                        $skippedNames = array_map(function($anggota) {
-                            return $anggota['nama_lengkap'] . ' (NIK: ' . $anggota['nik'] . ')';
-                        }, $skippedAnggota);
-                        $message .= '. Skipped anggota: ' . implode(', ', $skippedNames) . ' - already exist in database';
-                    }
-
                     return response()->json([
-                        'success' => $isFullySuccessful,
-                        'message' => $message,
+                        'success' => true,
+                        'message' => 'Anggota records created and assigned to zero KK',
                         'data' => [
                             'kk_id' => $kk->id,
                             'no_kk' => $kk->no_kk,
                             'anggota_count' => $anggotaCount,
-                            'original_anggota_count' => $originalAnggotaCount,
-                            'skipped_anggota_count' => count($skippedAnggota),
-                            'skipped_anggota' => $skippedAnggota,
                             'filename' => $request->input('filename'),
                             'batch_id' => $request->input('batch_id')
                         ]
@@ -683,30 +641,13 @@ class RwController extends Controller
 
                 \DB::commit();
 
-                // Determine success status based on whether any anggota were skipped
-                $isFullySuccessful = empty($skippedAnggota);
-                $message = $isFullySuccessful 
-                    ? 'KK and anggota created from N8N response'
-                    : 'KK and anggota created from N8N response, but some anggota were skipped';
-
-                // Add skipped anggota details to message if any
-                if (!empty($skippedAnggota)) {
-                    $skippedNames = array_map(function($anggota) {
-                        return $anggota['nama_lengkap'] . ' (NIK: ' . $anggota['nik'] . ')';
-                    }, $skippedAnggota);
-                    $message .= '. Skipped anggota: ' . implode(', ', $skippedNames) . ' - already exist in database';
-                }
-
                 return response()->json([
-                    'success' => $isFullySuccessful,
-                    'message' => $message,
+                    'success' => true,
+                    'message' => 'KK and anggota created from N8N response',
                     'data' => [
                         'kk_id' => $kk->id,
                         'no_kk' => $kk->no_kk,
                         'anggota_count' => $anggotaCount,
-                        'original_anggota_count' => $originalAnggotaCount,
-                        'skipped_anggota_count' => count($skippedAnggota),
-                        'skipped_anggota' => $skippedAnggota,
                         'filename' => $request->input('filename'),
                         'batch_id' => $request->input('batch_id')
                     ]
