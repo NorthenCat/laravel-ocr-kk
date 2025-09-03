@@ -296,13 +296,15 @@ class RwController extends Controller
 
             $rw = RW::with('getDesa')->where('desa_id', $desa_id)->findOrFail($rw_id);
 
-            $fileName = 'KK-OCR_' . $rw->getDesa->nama_desa . '_' . $rw->nama_rw . '_' . now()->format('Y-m-d_H-i-s') . '.xlsx';
+            $sanitizedDesaName = preg_replace('/[\/\\\\]/', '_', $rw->getDesa->nama_desa);
+            $sanitizedRwName = preg_replace('/[\/\\\\]/', '_', $rw->nama_rw);
+            $fileName = "KK-OCR_{$sanitizedDesaName}_{$sanitizedRwName}_" . now()->format('Y-m-d_H-i-s') . '.xlsx';
 
             // Return the Excel file as download response
             return Excel::download(new AnggotaExport($rw_id, true), $fileName, \Maatwebsite\Excel\Excel::XLSX, [
                 'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
                 'Cache-Control' => 'max-age=0',
-                'Content-Disposition' => 'attachment; filename="' . $fileName . '"'
+                'Content-Disposition' => "attachment; filename=\"{$fileName}\""
             ]);
 
         } catch (\Exception $e) {
@@ -346,13 +348,13 @@ class RwController extends Controller
 
             $rw = RW::with('getDesa')->where('desa_id', $desa_id)->findOrFail($rw_id);
 
-            $fileName = 'KK-OCR_NoFilename_' . $rw->getDesa->nama_desa . '_' . $rw->nama_rw . '_' . now()->format('Y-m-d_H-i-s') . '.xlsx';
+            $fileName = "KK-OCR_NoFilename_{$rw->getDesa->nama_desa}_{$rw->nama_rw}_" . now()->format('Y-m-d_H-i-s') . '.xlsx';
 
             // Return the Excel file as download response (without filename in the export data)
             return Excel::download(new AnggotaExport($rw_id, false), $fileName, \Maatwebsite\Excel\Excel::XLSX, [
                 'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
                 'Cache-Control' => 'max-age=0',
-                'Content-Disposition' => 'attachment; filename="' . $fileName . '"'
+                'Content-Disposition' => "attachment; filename=\"{$fileName}\""
             ]);
 
         } catch (\Exception $e) {
