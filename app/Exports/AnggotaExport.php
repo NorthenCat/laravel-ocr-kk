@@ -227,12 +227,12 @@ class AnggotaExport implements FromCollection, WithHeadings, WithMapping, WithCu
 
         if ($this->includeFilename) {
             // NIK column (C) and NomorKK column (D) with filename included
-            $formats['C'] = NumberFormat::FORMAT_NUMBER;
-            $formats['D'] = NumberFormat::FORMAT_NUMBER;
+            $formats['C'] = NumberFormat::FORMAT_TEXT;
+            $formats['D'] = NumberFormat::FORMAT_TEXT;
         } else {
             // NIK column (B) and NomorKK column (C) without filename
-            $formats['B'] = NumberFormat::FORMAT_NUMBER;
-            $formats['C'] = NumberFormat::FORMAT_NUMBER;
+            $formats['B'] = NumberFormat::FORMAT_TEXT;
+            $formats['C'] = NumberFormat::FORMAT_TEXT;
         }
 
         return $formats;
