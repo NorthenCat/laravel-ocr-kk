@@ -137,7 +137,7 @@ class AnggotaExport implements FromCollection, WithHeadings, WithMapping, WithCu
 
         $data = array_merge($data, [
             "'" . $anggota->nik ?? '',
-            "'" . $anggota->no_kk ?? $anggota->getKk->no_kk ?? '',
+            "'" . ($anggota->no_kk ?? $anggota->getKk->no_kk ?? ''),
             $anggota->nama_lengkap ?? '',
             $anggota->jenis_kelamin ?? '',
             $anggota->tempat_lahir ?? '',
