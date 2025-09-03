@@ -136,8 +136,8 @@ class AnggotaExport implements FromCollection, WithHeadings, WithMapping, WithCu
         }
 
         $data = array_merge($data, [
-            $anggota->nik ?? '',
-            $anggota->no_kk ?? $anggota->getKk->no_kk ?? '',
+            "'" . $anggota->nik ?? '',
+            "'" . $anggota->no_kk ?? $anggota->getKk->no_kk ?? '',
             $anggota->nama_lengkap ?? '',
             $anggota->jenis_kelamin ?? '',
             $anggota->tempat_lahir ?? '',
@@ -224,16 +224,6 @@ class AnggotaExport implements FromCollection, WithHeadings, WithMapping, WithCu
     public function columnFormats(): array
     {
         $formats = [];
-
-        if ($this->includeFilename) {
-            // NIK column (C) and NomorKK column (D) with filename included
-            $formats['C'] = NumberFormat::FORMAT_TEXT;
-            $formats['D'] = NumberFormat::FORMAT_TEXT;
-        } else {
-            // NIK column (B) and NomorKK column (C) without filename
-            $formats['B'] = NumberFormat::FORMAT_TEXT;
-            $formats['C'] = NumberFormat::FORMAT_TEXT;
-        }
 
         return $formats;
     }
